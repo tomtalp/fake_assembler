@@ -1,14 +1,42 @@
 #include <stdio.h>
+
 #define BITS_IN_INT 11
 #define MAX_SYMBOL_NAME 10
 #define MAX_SYMBOL_TABLE_ROWS 1024
+#define MAX_KEYWORD_BINARY_LENGTH 12
+#define MAX_INSTRUCTIONS 1024
 
+#define KEYWORD_ENCODING_TYPE_BITS 2
+#define KEYWORD_ADDRESSING_MODE_BITS 3
+#define KEYWORD_OPS_CODE_BITS 4
+
+#define BASE_MEM_ADDRESS 100 /* The base memory address our program starts with*/
+
+/* Representation of a keyword in INT's */ 
 typedef struct memKeyword {
-    unsigned int encodingType : 2;
-    unsigned int targetAddressingMode : 3;
-    unsigned int opCode : 4;
-    unsigned int sourceAddressingMode : 3;
+    unsigned int encodingType : KEYWORD_ENCODING_TYPE_BITS;
+    unsigned int targetAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
+    unsigned int opCode : KEYWORD_OPS_CODE_BITS;
+    unsigned int sourceAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
 } memKeyword;
+
+/* Representation of a keyword as a String (char array of size 12)*/
+typedef struct memKeywordBinary{
+    char keyword[MAX_KEYWORD_BINARY_LENGTH];
+} memKeywordBinary;
+
+/* The code instructions section - contains the actual code instructions  */
+typedef struct codeInstructionsTable {
+    int instructionCount;
+    char memKeywordBinary[MAX_INSTRUCTIONS];
+} codeInstructionsTable;
+
+/* The data definition section - contains the data counter (DC) and an array of data value
+encoded in binary*/
+typedef struct dataDefinitionsTables {
+    int dataCounter;
+    char memKeywordBinary[MAX_INSTRUCTIONS];
+} dataDefinitionsTables;
 
 typedef struct symbolTableRow {
     char symbolName[MAX_SYMBOL_NAME];
@@ -44,6 +72,60 @@ struct {
     {"stop", 15}
 };
 
+char getBinaryChar(int mask, int value) {
+    // return (mask & value == 0) ? '0' : '1';
+    char val;
+    if ((mask & value) == 0) {
+        return '0';
+    }
+    return '1';
+
+    // return 
+}
+
+void memKeywordToBinary(memKeyword *mk, memKeywordBinary *mkb) {
+    printf("Hello\n");
+    int i, j, mask;
+    char binary[MAX_KEYWORD_BINARY_LENGTH];
+    char binaryChar;
+
+    /* Convert encoding type */
+    i = MAX_KEYWORD_BINARY_LENGTH-1;
+
+    mask = 1 << KEYWORD_ENCODING_TYPE_BITS-1;
+    while (mask) {
+        binaryChar = getBinaryChar(mask, mk->encodingType);
+        mkb->keyword[i] = binaryChar;
+        i--;
+        mask >>= 1;
+    }
+    
+    /* Convert target addressing mode */
+    mask = 1 << (KEYWORD_ADDRESSING_MODE_BITS-1);
+    while (mask) {
+        binaryChar = getBinaryChar(mask, mk->targetAddressingMode);
+        mkb->keyword[i] = binaryChar;
+        i--;
+        mask >>= 1;
+    }
+
+    /* Convert Operation code */
+    mask = 1 << KEYWORD_OPS_CODE_BITS-1;
+    while (mask) {
+        mkb->keyword[i] = getBinaryChar(mask, mk->opCode);
+        i--;
+        mask >>= 1;
+    }
+
+    /* Convert source addressing mode */
+    mask = 1 << KEYWORD_ADDRESSING_MODE_BITS-1;
+    while (mask) {
+        mkb->keyword[i] = getBinaryChar(mask, mk->sourceAddressingMode);
+        i--;
+        mask >>= 1;
+    }
+}
+
 void print_int_as_binary(int n, int expected_bits);
 
 void memKeyword_to_binary(memKeyword *mem) {
@@ -61,7 +143,9 @@ void memKeyword_to_binary(memKeyword *mem) {
 
     // printf("encodingType = ");
     print_int_as_binary(mem->encodingType, 2-1);
-    // printf("\n");
+    // printf("\n");/
+
+    // printf("DONE!\n\n\n");
 }
 
 void print_int_as_binary(int n, int expected_bits) {
@@ -79,6 +163,7 @@ void print_int_as_binary(int n, int expected_bits) {
 
 int main() {
     memKeyword mem;
+    memKeywordBinary mkb;
 
     // Example - MOV r1, r2
     // encodingType = 
@@ -87,10 +172,16 @@ int main() {
     mem.targetAddressingMode = 5; // Because this is a register (r1)
     mem.sourceAddressingMode = 5; // Because this is a register (r2)
 
+    printf("Trying 'memKeyword_to_binary' \n");
     memKeyword_to_binary(&mem);
     printf("\n");
 
+    memKeywordToBinary(&mem, &mkb);
+
+    printf("%s\n", mkb.keyword);
+
     printf("Expected binary representation of MOV r1, r2 =  \n");
     printf("101000010100\n");
+
     return 0;
 }
