@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
 
 #define BITS_IN_INT 11
-#define MAX_SYMBOL_NAME 256
+#define MAX_SYMBOL_NAME 31
 #define MAX_SYMBOL_TABLE_ROWS 1024
 #define MAX_KEYWORD_BINARY_LENGTH 12
 #define MAX_INSTRUCTIONS 1024
 #define MAX_INSTRUCTION_LENGTH 256 /* TODO - IS THIS OK? */
+#define MAX_RESERVED_KEYWORD_SIZE 4
+#define RESERVED_KEYWORDS_COUNT 23
 
 #define KEYWORD_ENCODING_TYPE_BITS 2
 #define KEYWORD_ADDRESSING_MODE_BITS 3
@@ -80,6 +84,25 @@ struct {
     {"stop", 15}
 };
 
+char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
+    "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+    "mov", "cmp", "add", "sub", "not", "clr", "lea",
+    "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
+    "rts", "stop"
+};
+
+/* Test if a given keyword is a reserved keyword by the language, which can't be
+reassigned as a user variable */
+int isReservedKeyword(char *keyword) {
+    int i;
+    for(i = 0; i < RESERVED_KEYWORDS_COUNT; i++) {
+        if (strcmp(keyword, reservedKeywords[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void printSymbolTableRow(symbolTableRow *row) {
     printf("Name = %s | Mem addr = %d | Is Extern = %d | Is Def symbol = %d\n", row->symbolName, row->memoryAddress, row->isExternal, row->isDefinitionSymbol);
 }
@@ -103,14 +126,11 @@ void printDataTable() {
 }
 
 char getBinaryChar(int mask, int value) {
-    // return (mask & value == 0) ? '0' : '1';
     char val;
     if ((mask & value) == 0) {
         return '0';
     }
     return '1';
-
-    // return 
 }
 
 void memKeywordToBinaryString(memKeyword *mk, memKeywordBinaryString *mkb) {
@@ -200,6 +220,35 @@ void print_int_as_binary(int n, int expected_bits) {
     }
 }
 
+/* Check if a command is a symbol definition */
+int isSymbolDefinition(char *command) {
+    if (strchr(command, ':') == NULL) {
+        return 0;
+    }
+    return 1;
+} 
+
+/* Check if a command is a valid symbol decleration*/
+int isValidSymbol(char *command) {
+    char *symbolName = malloc(MAX_SYMBOL_NAME);
+
+    printf("Received command = %s\n", command);
+
+    symbolName = strtok(command, ":");
+
+    printf("Detected symbol name %s\n", symbolName);
+
+    if (isReservedKeyword(symbolName)) {
+        printf("Can't declare symbol %s (reserved keyword)\n", command);
+        return 0;
+    }
+    if (isalpha(symbolName[0]) == 0) {
+        printf("Symbol name must begin with an alphabet character (a-z, A-Z)\n");
+        return 0;
+    }
+    return 1;
+}
+
 void firstIteration() {
     // 1. Read row from file
 
@@ -233,30 +282,61 @@ void firstIteration() {
 
     symbTable.rows[symbTable.rowsCounter] = symbRow2;
     (symbTable.rowsCounter)++;
+
+    int y_val = 7;
+    memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+    intToBinaryString(y_val, mkb2);
+    dataTable.rows[dataTable.dataCounter] = mkb2;
+    (dataTable.dataCounter)++;
 }
 
 
 
 int main(int argc, char *argv[]) {
     FILE *fp;
+    char *commands[2] = {"MOV @r1, @r2", "X: .data 3"};
+
+    for (int i=0; i < 2; i++) {
+        printf("%s\n", commands[i]);
+    }
+
     // memKeyword mem;
     // memKeywordBinaryString mkb;
 
-    printf("Hello!\n");
+    // printf("Hello!\n");
 
-    printf("Symbol table size before 1st iteration = %d\n", symbTable.rowsCounter);
-    printf("Data table size before 1st iteration = %d\n", dataTable.dataCounter);
-    printf("\n\n");
-    firstIteration();
-    printf("Finished first iteration\n");
+    // ######################################################
+    // ### first Iteration tests (currently only a simple data table initialization)
+    // printf("Symbol table size before 1st iteration = %d\n", symbTable.rowsCounter);
+    // printf("Data table size before 1st iteration = %d\n", dataTable.dataCounter);
+    // printf("\n\n");
+    // firstIteration();
+    // printf("Finished first iteration\n");
 
-    printf("Symbol table size AFTER 1st iteration = %d\n", symbTable.rowsCounter);
+    // printf("Symbol table size AFTER 1st iteration = %d\n", symbTable.rowsCounter);
 
-    printSymbolTable();
-    printf("\n\n");
-    printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
-    printDataTable();
-    printf("\n\nDone!\n");
+    // printSymbolTable();
+    // printf("\n\n");
+    // printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
+    // printDataTable();
+    // printf("\n\nDone!\n");
+
+    
+    // ######################################################
+    // ############# TEST SYMBOL VALIDATIONS ################
+    printf("'MOV @r1, @r2' is symbol == %d (should be 0)\n", isSymbolDefinition("MOV @r1, @r2"));
+    printf("'X: .data 5' is symbol == %d (should be 1) \n", isSymbolDefinition("X: .data 5"));
+    printf("'X: .data:: 5' is symbol == %d (should be 1) \n", isSymbolDefinition("X: .data:: 5"));
+    printf("'.extern Z' is symbol == %d (should be 0) \n", isSymbolDefinition(".extern Z"));
+    
+    char str[] = "r1: .data 5";
+    printf("'%s' is valid symbol == %d\n", str, isValidSymbol(str));
+
+    char str2[] = "1x: .data 5";
+    printf("'%s' is valid symbol == %d\n", str2, isValidSymbol(str2));
+
+    char str3[] = "XYZ: .data 5";
+    printf("'%s' is valid symbol == %d\n", str3, isValidSymbol(str3));
     // char *fileRows[MAX_INSTRUCTIONS];
     // char row[MAX_INSTRUCTION_LENGTH];
     // int i=0;
@@ -307,13 +387,13 @@ int main(int argc, char *argv[]) {
     // 000000000101
     // 000000000101
 
-    memKeyword mem;
-    memKeywordBinaryString mkb;
+    // memKeyword mem;
+    // memKeywordBinaryString mkb;
 
-    mem.opCode = 0; // MOV
-    mem.encodingType = 0; // 0 (A) because this is a command type of instruction
-    mem.targetAddressingMode = 5; // Because this is a register (r1)
-    mem.sourceAddressingMode = 5; // Because this is a register (r2)
+    // mem.opCode = 0; // MOV
+    // mem.encodingType = 0; // 0 (A) because this is a command type of instruction
+    // mem.targetAddressingMode = 5; // Because this is a register (r1)
+    // mem.sourceAddressingMode = 5; // Because this is a register (r2)
 
     // printf("Trying 'memKeyword_to_binary' \n");
     // memKeyword_to_binary(&mem);
