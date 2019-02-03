@@ -5,13 +5,15 @@
 
 
 #define BITS_IN_INT 11
-#define MAX_SYMBOL_NAME 31
+#define MAX_SYMBOL_NAME_LENGTH 31
 #define MAX_SYMBOL_TABLE_ROWS 1024
 #define MAX_KEYWORD_BINARY_LENGTH 12
 #define MAX_INSTRUCTIONS 1024
 #define MAX_INSTRUCTION_LENGTH 256 /* TODO - IS THIS OK? */
 #define MAX_RESERVED_KEYWORD_SIZE 4
 #define RESERVED_KEYWORDS_COUNT 23
+#define DATA_DEFINITIONS_COUNT 2
+#define MAX_DATA_DEF_LENGTH 7
 
 #define KEYWORD_ENCODING_TYPE_BITS 2
 #define KEYWORD_ADDRESSING_MODE_BITS 3
@@ -46,7 +48,7 @@ typedef struct dataDefinitionsTables {
 } dataDefinitionsTables;
 
 typedef struct symbolTableRow {
-    char symbolName[MAX_SYMBOL_NAME];
+    char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memoryAddress;
     int isExternal;
     int isDefinitionSymbol; /* Is the symbol pointing to a definition statement? */
@@ -89,6 +91,10 @@ char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
     "mov", "cmp", "add", "sub", "not", "clr", "lea",
     "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
     "rts", "stop"
+};
+
+char *dataDefinitionKeywords[DATA_DEFINITIONS_COUNT] = {
+    ".data", ".string"
 };
 
 /* Test if a given keyword is a reserved keyword by the language, which can't be
@@ -229,8 +235,8 @@ int isSymbolDefinition(char *command) {
 } 
 
 /* Check if a command is a valid symbol decleration*/
-int isValidSymbol(char *command) {
-    char *symbolName = malloc(MAX_SYMBOL_NAME);
+char *getSymbolName(char *command) {
+    char *symbolName = malloc(MAX_SYMBOL_NAME_LENGTH);
 
     printf("Received command = %s\n", command);
 
@@ -240,24 +246,136 @@ int isValidSymbol(char *command) {
 
     if (isReservedKeyword(symbolName)) {
         printf("Can't declare symbol %s (reserved keyword)\n", command);
-        return 0;
+        return NULL;
     }
     if (isalpha(symbolName[0]) == 0) {
         printf("Symbol name must begin with an alphabet character (a-z, A-Z)\n");
-        return 0;
+        return NULL;
     }
-    return 1;
+    return symbolName;
+}
+
+/* Receive a raw command and a symbolName, extract the symbol name from the command and put it 
+in the symbolName variable */
+void getSymbolName2(char *rawCommand, char *symbolName) {
+    char *rawCommandStart = rawCommand;
+
+    /* Locate the command name */
+    while (*rawCommandStart != 0 && !isspace(*rawCommandStart) && *rawCommand != ':') {
+        *symbolName = *rawCommandStart;
+        symbolName++;
+        rawCommandStart++;
+    }
+
+    *(--symbolName) = '\0'; /* We extracted the ':' part as well, so get rid of it before terminating the symb name */
+    
+    /* Remove the command name from rawCommand */
+    while (*rawCommandStart != 0) {
+        *rawCommand = *rawCommandStart;
+        rawCommand++;
+        rawCommandStart++; 
+    }
+    *rawCommand = '\0';
+}
+
+/*
+    Trim all leading whitespaces in the received source string. This function modifies the original string!
+
+    @param source (*char) - The string to be trimmed
+*/
+void trimLeadingWhitespace(char *source) {
+    char *start = source;
+    
+    while (isspace(*start)) {
+        start++;
+    }
+
+    while (*start != 0) {
+        *source = *start;
+        source++;
+        start++;
+    }   
+    *source = '\0'; /* Terminate the string */
+}
+
+int isDataDefinition(char *command) {
+    int i;
+    char defType[MAX_DATA_DEF_LENGTH];
+    printf("Working on %s\n", command);
+    i = 0;
+    /* Iterate until we find a space. That's where the potential data def should end */
+    while (*command != 0 && !isspace(*command)) {
+        if (i >= MAX_DATA_DEF_LENGTH) {
+            return 0;
+        }
+        defType[i] = *command;
+        i++;
+        command++;
+    }
+
+    // trimLeadingWhitespace(potentialDefType);
+    printf("Potential data def - %s\n", defType);
+    for (i = 0; i < DATA_DEFINITIONS_COUNT; i++) {
+        if (strcmp(defType, dataDefinitionKeywords[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void getDataDefinionType(char *rawCommand, char *defType) {
+    char *rawCommandStart = rawCommand;
+    int defSize;
+    printf("Received raw command = %s\n", rawCommand);
+    /* Locate the command name */
+
+    while (*rawCommandStart != 0 && !isspace(*rawCommandStart)) {
+        *defType = *rawCommandStart;
+        defType++;
+        defSize++;
+        rawCommandStart++;
+    }
+
+    *defType = '\0';
+    defType = defType - defSize; /* Go back to beginning of string */
+
+    if (!isDataDefinition(defType)) {
+        printf("defType %s is not a valid def type, meaning command isn't a def type\n", defType);
+        *defType = '\0';
+        return;
+    }
+
+    /* Remove the def type we extracted from rawCommand */
+    while (*rawCommandStart != 0) {
+        *rawCommand = *rawCommandStart;
+        rawCommand++;
+        rawCommandStart++; 
+    }
+    *rawCommand = '\0';
 }
 
 void firstIteration() {
     // 1. Read row from file
+    // char inputRow[] = "XYZ: .data 5";
+    char inputRow[] = "  .data 5";
+    // char *dataTypeDef;
 
+    trimLeadingWhitespace(inputRow);
+
+    printf("Working on %s\n", inputRow);
     // 2. Is it a symbol? 
+    if (isSymbolDefinition(inputRow)) {
+        printf("Row is a symbol!\n");
+    } else if (isDataDefinition(inputRow)) { // Is this an instruction to store data? (.string or .data)
+        printf("Row has no symbol but is a data def!\n");
+    } else {
+        printf("Nothing.... :(\n");
+    }
 
     // 3. If it's a symbol & symbol type '.data' or '.string' then add to symbol table & data table, and increase DC
 
     symbolTableRow *symbRow = (symbolTableRow*)malloc(sizeof(symbolTableRow));
-    // char symbName[MAX_SYMBOL_NAME] = "X";
+    // char symbName[MAX_SYMBOL_NAME_LENGTH] = "X";
 
     // strcpy(symbRow->symbolName, symbName);
     strcpy(symbRow->symbolName, "X");
@@ -293,12 +411,14 @@ void firstIteration() {
 
 
 int main(int argc, char *argv[]) {
-    FILE *fp;
-    char *commands[2] = {"MOV @r1, @r2", "X: .data 3"};
+    firstIteration();
 
-    for (int i=0; i < 2; i++) {
-        printf("%s\n", commands[i]);
-    }
+    // FILE *fp;
+    // char *commands[2] = {"MOV @r1, @r2", "X: .data 3"};
+
+    // for (int i=0; i < 2; i++) {
+    //     printf("%s\n", commands[i]);
+    // }
 
     // memKeyword mem;
     // memKeywordBinaryString mkb;
@@ -324,19 +444,28 @@ int main(int argc, char *argv[]) {
     
     // ######################################################
     // ############# TEST SYMBOL VALIDATIONS ################
-    printf("'MOV @r1, @r2' is symbol == %d (should be 0)\n", isSymbolDefinition("MOV @r1, @r2"));
-    printf("'X: .data 5' is symbol == %d (should be 1) \n", isSymbolDefinition("X: .data 5"));
-    printf("'X: .data:: 5' is symbol == %d (should be 1) \n", isSymbolDefinition("X: .data:: 5"));
-    printf("'.extern Z' is symbol == %d (should be 0) \n", isSymbolDefinition(".extern Z"));
+    // printf("'MOV @r1, @r2' is symbol == %d (should be 0)\n", isSymbolDefinition("MOV @r1, @r2"));
+    // printf("'X: .data 5' is symbol == %d (should be 1) \n", isSymbolDefinition("X: .data 5"));
+    // printf("'X: .data:: 5' is symbol == %d (should be 1) \n", isSymbolDefinition("X: .data:: 5"));
+    // printf("'.extern Z' is symbol == %d (should be 0) \n", isSymbolDefinition(".extern Z"));
     
-    char str[] = "r1: .data 5";
-    printf("'%s' is valid symbol == %d\n", str, isValidSymbol(str));
+    // char str[] = "r1: .data 5";
+    // printf("'%s' is valid symbol == %d\n", str, isValidSymbol(str));
 
-    char str2[] = "1x: .data 5";
-    printf("'%s' is valid symbol == %d\n", str2, isValidSymbol(str2));
+    // char str2[] = "1x: .data 5";
+    // printf("'%s' is valid symbol == %d\n", str2, isValidSymbol(str2));
 
-    char str3[] = "XYZ: .data 5";
-    printf("'%s' is valid symbol == %d\n", str3, isValidSymbol(str3));
+    // char str3[] = "XYZ: .data 5";
+    // char symbName3[MAX_SYMBOL_NAME_LENGTH];
+    // printf("Command before getting symb name = '%s'\n", str3);
+    // symbName3 = getSymbolName(str3);
+    // getSymbolName2(str3, symbName3);
+    // printf("Got symbol name %s from command '%s'\n", symbName3, str3);
+
+    // ################### TEST IF COMMAND IS A DATA DEFINITION ###################
+    // char str4[] = " .data XYZ:  .data 3";
+    // printf("Command '%s' is data def? %d\n", str4, isDataDefinition(str4));
+    // printf("'%s' is valid symbol == %d\n", str3, isValidSymbol(str3));
     // char *fileRows[MAX_INSTRUCTIONS];
     // char row[MAX_INSTRUCTION_LENGTH];
     // int i=0;
