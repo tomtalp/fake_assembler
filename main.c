@@ -10,10 +10,9 @@
 #define MAX_KEYWORD_BINARY_LENGTH 12
 #define MAX_INSTRUCTIONS 1024
 #define MAX_INSTRUCTION_LENGTH 256 /* TODO - IS THIS OK? */
-#define MAX_RESERVED_KEYWORD_SIZE 4
-#define RESERVED_KEYWORDS_COUNT 23
+#define MAX_RESERVED_KEYWORD_SIZE 7
+#define RESERVED_KEYWORDS_COUNT 27
 #define DATA_DEFINITIONS_COUNT 2
-#define MAX_DATA_DEF_LENGTH 7
 
 #define KEYWORD_ENCODING_TYPE_BITS 2
 #define KEYWORD_ADDRESSING_MODE_BITS 3
@@ -47,22 +46,22 @@ typedef struct dataDefinitionsTables {
     memKeywordBinaryString *rows[MAX_INSTRUCTIONS];
 } dataDefinitionsTables;
 
-typedef struct symbolTableRow {
+typedef struct symbolTableNode {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memoryAddress;
     int isExternal;
     int isDefinitionSymbol; /* Is the symbol pointing to a definition statement? */
-} symbolTableRow;
+    struct symbolTableNode *next;
+} symbolTableNode;
 
 typedef struct symbolTable {
-    symbolTableRow *rows[MAX_SYMBOL_TABLE_ROWS];
-    int rowsCounter;
+    symbolTableNode *head;
+    int symbolsCounter;
 } symbolTable;
 
-symbolTable symbTable;
+// symbolTable symbTable;
 dataDefinitionsTables dataTable;
 codeInstructionsTable codeTable;
-
 
 struct {
     char *code_name;
@@ -90,7 +89,7 @@ char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
     "r1", "r2", "r3", "r4", "r5", "r6", "r7",
     "mov", "cmp", "add", "sub", "not", "clr", "lea",
     "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
-    "rts", "stop"
+    "rts", "stop", "entry", "extern", "string", "data"
 };
 
 char *dataDefinitionKeywords[DATA_DEFINITIONS_COUNT] = {
@@ -109,17 +108,45 @@ int isReservedKeyword(char *keyword) {
     return 0;
 }
 
-void printSymbolTableRow(symbolTableRow *row) {
+void initDataTable() {
+    dataTable.dataCounter = 0;
+}
+
+void initSymbolTable(symbolTable *symbTable) {
+    printf("inside initSymbolTable\n");
+    symbTable->head = NULL;
+    symbTable->symbolsCounter = 0;
+}
+
+void printSymbolTableRow(symbolTableNode *row) {
     printf("Name = %s | Mem addr = %d | Is Extern = %d | Is Def symbol = %d\n", row->symbolName, row->memoryAddress, row->isExternal, row->isDefinitionSymbol);
 }
 
-// void printSymbolTable(symbolTable *symbTable) {
-void printSymbolTable() {
+void printSymbolTable(symbolTable *tb) {
     int i;
-    printf("Symbol Table has %d rows\n", symbTable.rowsCounter);
-    for(i = 0; i < symbTable.rowsCounter; i++) {
-        printf("Symbol table row #%d = name = %s, addr = %d\n", i, symbTable.rows[i]->symbolName, symbTable.rows[i]->memoryAddress);
+    symbolTableNode *temp = tb->head;
+
+    printf("Symbol Table has %d rows\n", tb->symbolsCounter);
+    // for(i = 1; temp ; temp = temp->next, i++)  {   
+    for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {   
+        printf("Symbol table row #%d = name = %s, addr = %d\n", i+1, temp->symbolName, temp->memoryAddress);
     }
+}
+
+void addNodeToSymbolTable(symbolTable *tb, symbolTableNode *newNode) {
+    printf("Gonna add a node to symb table\n");
+    symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
+    printf("Yoyo\n");
+
+    if (tb->symbolsCounter == 0) {
+        tb->head = newNode;
+        tb->symbolsCounter += 1;
+        return;
+    }
+
+    tb->head->next = newNode;
+    newNode->next = temp;
+    tb->symbolsCounter += 1;
 }
 
 void printDataTable() {
@@ -300,12 +327,12 @@ void trimLeadingWhitespace(char *source) {
 
 int isDataDefinition(char *command) {
     int i;
-    char defType[MAX_DATA_DEF_LENGTH];
+    char defType[MAX_RESERVED_KEYWORD_SIZE];
     printf("Working on %s\n", command);
     i = 0;
     /* Iterate until we find a space. That's where the potential data def should end */
     while (*command != 0 && !isspace(*command)) {
-        if (i >= MAX_DATA_DEF_LENGTH) {
+        if (i >= MAX_RESERVED_KEYWORD_SIZE) {
             return 0;
         }
         defType[i] = *command;
@@ -313,8 +340,8 @@ int isDataDefinition(char *command) {
         command++;
     }
 
-    // trimLeadingWhitespace(potentialDefType);
-    printf("Potential data def - %s\n", defType);
+    defType[i] = '\0';
+
     for (i = 0; i < DATA_DEFINITIONS_COUNT; i++) {
         if (strcmp(defType, dataDefinitionKeywords[i]) == 0) {
             return 1;
@@ -354,65 +381,104 @@ void getDataDefinionType(char *rawCommand, char *defType) {
     *rawCommand = '\0';
 }
 
-void firstIteration() {
+int isExternOrEntry(char *command) {
+    int i;
+    char potentialKeyword[MAX_RESERVED_KEYWORD_SIZE];
+    i = 0;
+    /* Iterate until we find a space. That's where the potential data def should end */
+    while (*command != 0 && !isspace(*command)) {
+        if (i >= MAX_RESERVED_KEYWORD_SIZE) {
+            return 0;
+        }
+        potentialKeyword[i] = *command;
+        i++;
+        command++;
+    }
+
+    potentialKeyword[i] = '\0';
+
+    if ((strcmp(potentialKeyword, ".extern") == 0) || (strcmp(potentialKeyword, ".entry") == 0)) {
+        return 1;
+    }
+    return 0;
+}
+
+void firstIteration(symbolTable *symbTable) {
     // 1. Read row from file
     // char inputRow[] = "XYZ: .data 5";
-    char inputRow[] = "  .data 5";
+    // char inputRow[] = "  .data 5";
+    char inputRow[] = ".extern Z";
     // char *dataTypeDef;
 
     trimLeadingWhitespace(inputRow);
 
-    printf("Working on %s\n", inputRow);
+    printf("firstIteration is working on %s\n", inputRow);
     // 2. Is it a symbol? 
     if (isSymbolDefinition(inputRow)) {
         printf("Row is a symbol!\n");
     } else if (isDataDefinition(inputRow)) { // Is this an instruction to store data? (.string or .data)
         printf("Row has no symbol but is a data def!\n");
+    } else if (isExternOrEntry(inputRow)) {
+        printf("Command is external/entry\n");
+        // Here we need to insert "EXTERN" into symbol table
     } else {
         printf("Nothing.... :(\n");
     }
 
     // 3. If it's a symbol & symbol type '.data' or '.string' then add to symbol table & data table, and increase DC
 
-    symbolTableRow *symbRow = (symbolTableRow*)malloc(sizeof(symbolTableRow));
+    symbolTableNode *symbNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     // char symbName[MAX_SYMBOL_NAME_LENGTH] = "X";
-
+    
     // strcpy(symbRow->symbolName, symbName);
-    strcpy(symbRow->symbolName, "X");
-    symbRow->memoryAddress = dataTable.dataCounter;
-    symbRow->isExternal = 0;
-    symbRow->isDefinitionSymbol = 0;
+    strcpy(symbNode->symbolName, "X");
+    // symbNode->memoryAddress = dataTable.dataCounter;
+    symbNode->memoryAddress = 654321;
+    symbNode->isExternal = 0;
+    symbNode->isDefinitionSymbol = 0;
+    symbNode->next = NULL;
+    printf("Initialized a node\n");
+    // printf("symbTable = %p\n", &symbTable);
+    addNodeToSymbolTable(symbTable, symbNode);
+    
+    // symbTable.rows[symbTable.rowsCounter] = symbRow;
+    // (symbTable.rowsCounter)++;
 
-    symbTable.rows[symbTable.rowsCounter] = symbRow;
-    (symbTable.rowsCounter)++;
+    // int x_val = 10;
+    // memKeywordBinaryString *mkb1 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+    // intToBinaryString(x_val, mkb1);
+    // dataTable.rows[dataTable.dataCounter] = mkb1;
+    // (dataTable.dataCounter)++;
 
-    int x_val = 10;
-    memKeywordBinaryString *mkb1 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
-    intToBinaryString(x_val, mkb1);
-    dataTable.rows[dataTable.dataCounter] = mkb1;
-    (dataTable.dataCounter)++;
+    symbolTableNode *symbNode2 = (symbolTableNode*)malloc(sizeof(symbolTableNode));
+    strcpy(symbNode2->symbolName, "Y");
+    // symbNode2->memoryAddress = dataTable.dataCounter;
+    symbNode2->memoryAddress = 123456;
+    symbNode2->isExternal = 0;
+    symbNode2->isDefinitionSymbol = 0;
+    symbNode2->next = NULL;
 
-    symbolTableRow *symbRow2 = (symbolTableRow*)malloc(sizeof(symbolTableRow));
-    strcpy(symbRow2->symbolName, "Y");
-    symbRow2->memoryAddress = dataTable.dataCounter;
-    symbRow2->isExternal = 0;
-    symbRow2->isDefinitionSymbol = 0;
+    addNodeToSymbolTable(symbTable, symbNode2);
+    // symbTable.rows[symbTable.rowsCounter] = symbRow2;
+    // (symbTable.rowsCounter)++;
 
-    symbTable.rows[symbTable.rowsCounter] = symbRow2;
-    (symbTable.rowsCounter)++;
-
-    int y_val = 7;
-    memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
-    intToBinaryString(y_val, mkb2);
-    dataTable.rows[dataTable.dataCounter] = mkb2;
-    (dataTable.dataCounter)++;
+    // int y_val = 7;
+    // memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+    // intToBinaryString(y_val, mkb2);
+    // dataTable.rows[dataTable.dataCounter] = mkb2;
+    // (dataTable.dataCounter)++;
 }
 
 
 
 int main(int argc, char *argv[]) {
-    firstIteration();
-
+    symbolTable symbTable;
+    initSymbolTable(&symbTable);
+    printf("Printing initial symbol table - \n");
+    printSymbolTable(&symbTable);
+    firstIteration(&symbTable);
+    printf("Printing symbol table after firstIteration - \n");
+    printSymbolTable(&symbTable);
     // FILE *fp;
     // char *commands[2] = {"MOV @r1, @r2", "X: .data 3"};
 
