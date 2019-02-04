@@ -134,9 +134,7 @@ void printSymbolTable(symbolTable *tb) {
 }
 
 void addNodeToSymbolTable(symbolTable *tb, symbolTableNode *newNode) {
-    printf("Gonna add a node to symb table\n");
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
-    printf("Yoyo\n");
 
     if (tb->symbolsCounter == 0) {
         tb->head = newNode;
@@ -432,28 +430,25 @@ void firstIteration(symbolTable *symbTable) {
     
     // strcpy(symbRow->symbolName, symbName);
     strcpy(symbNode->symbolName, "X");
-    // symbNode->memoryAddress = dataTable.dataCounter;
-    symbNode->memoryAddress = 654321;
+    symbNode->memoryAddress = dataTable.dataCounter;
+    // symbNode->memoryAddress = 654321;
     symbNode->isExternal = 0;
     symbNode->isDefinitionSymbol = 0;
     symbNode->next = NULL;
     printf("Initialized a node\n");
     // printf("symbTable = %p\n", &symbTable);
     addNodeToSymbolTable(symbTable, symbNode);
-    
-    // symbTable.rows[symbTable.rowsCounter] = symbRow;
-    // (symbTable.rowsCounter)++;
 
-    // int x_val = 10;
-    // memKeywordBinaryString *mkb1 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
-    // intToBinaryString(x_val, mkb1);
-    // dataTable.rows[dataTable.dataCounter] = mkb1;
-    // (dataTable.dataCounter)++;
+    int x_val = 10;
+    memKeywordBinaryString *mkb1 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+    intToBinaryString(x_val, mkb1);
+    dataTable.rows[dataTable.dataCounter] = mkb1;
+    (dataTable.dataCounter)++;
 
     symbolTableNode *symbNode2 = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     strcpy(symbNode2->symbolName, "Y");
-    // symbNode2->memoryAddress = dataTable.dataCounter;
-    symbNode2->memoryAddress = 123456;
+    symbNode2->memoryAddress = dataTable.dataCounter;
+    // symbNode2->memoryAddress = 123456;
     symbNode2->isExternal = 0;
     symbNode2->isDefinitionSymbol = 0;
     symbNode2->next = NULL;
@@ -462,11 +457,11 @@ void firstIteration(symbolTable *symbTable) {
     // symbTable.rows[symbTable.rowsCounter] = symbRow2;
     // (symbTable.rowsCounter)++;
 
-    // int y_val = 7;
-    // memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
-    // intToBinaryString(y_val, mkb2);
-    // dataTable.rows[dataTable.dataCounter] = mkb2;
-    // (dataTable.dataCounter)++;
+    int y_val = 7;
+    memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+    intToBinaryString(y_val, mkb2);
+    dataTable.rows[dataTable.dataCounter] = mkb2;
+    (dataTable.dataCounter)++;
 }
 
 
@@ -476,9 +471,14 @@ int main(int argc, char *argv[]) {
     initSymbolTable(&symbTable);
     printf("Printing initial symbol table - \n");
     printSymbolTable(&symbTable);
+    printf("Data table size before 1st iteration = %d\n", dataTable.dataCounter);
     firstIteration(&symbTable);
     printf("Printing symbol table after firstIteration - \n");
     printSymbolTable(&symbTable);
+
+    printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
+    printDataTable();
+
     // FILE *fp;
     // char *commands[2] = {"MOV @r1, @r2", "X: .data 3"};
 
