@@ -59,7 +59,6 @@ typedef struct symbolTable {
     int symbolsCounter;
 } symbolTable;
 
-// symbolTable symbTable;
 dataDefinitionsTables dataTable;
 codeInstructionsTable codeTable;
 
@@ -259,30 +258,30 @@ int isSymbolDefinition(char *command) {
     return 1;
 } 
 
-/* Check if a command is a valid symbol decleration*/
-char *getSymbolName(char *command) {
-    char *symbolName = malloc(MAX_SYMBOL_NAME_LENGTH);
+// /* Check if a command is a valid symbol decleration*/
+// char *getSymbolName(char *command) {
+//     char *symbolName = malloc(MAX_SYMBOL_NAME_LENGTH);
 
-    printf("Received command = %s\n", command);
+//     printf("Received command = %s\n", command);
 
-    symbolName = strtok(command, ":");
+//     symbolName = strtok(command, ":");
 
-    printf("Detected symbol name %s\n", symbolName);
+//     printf("Detected symbol name %s\n", symbolName);
 
-    if (isReservedKeyword(symbolName)) {
-        printf("Can't declare symbol %s (reserved keyword)\n", command);
-        return NULL;
-    }
-    if (isalpha(symbolName[0]) == 0) {
-        printf("Symbol name must begin with an alphabet character (a-z, A-Z)\n");
-        return NULL;
-    }
-    return symbolName;
-}
+//     if (isReservedKeyword(symbolName)) {
+//         printf("Can't declare symbol %s (reserved keyword)\n", command);
+//         return NULL;
+//     }
+//     if (isalpha(symbolName[0]) == 0) {
+//         printf("Symbol name must begin with an alphabet character (a-z, A-Z)\n");
+//         return NULL;
+//     }
+//     return symbolName;
+// }
 
 /* Receive a raw command and a symbolName, extract the symbol name from the command and put it 
 in the symbolName variable */
-void getSymbolName2(char *rawCommand, char *symbolName) {
+void getSymbolName(char *rawCommand, char *symbolName) {
     char *rawCommandStart = rawCommand;
 
     /* Locate the command name */
@@ -364,11 +363,12 @@ void getDataDefinionType(char *rawCommand, char *defType) {
     *defType = '\0';
     defType = defType - defSize; /* Go back to beginning of string */
 
-    if (!isDataDefinition(defType)) {
-        printf("defType %s is not a valid def type, meaning command isn't a def type\n", defType);
-        *defType = '\0';
-        return;
-    }
+    // This is redundant since we already check this before calling the function
+    // if (!isDataDefinition(defType)) {
+    //     printf("defType %s is not a valid def type, meaning command isn't a def type\n", defType);
+    //     *defType = '\0';
+    //     return;
+    // }
 
     /* Remove the def type we extracted from rawCommand */
     while (*rawCommandStart != 0) {
@@ -383,7 +383,7 @@ int isExternOrEntry(char *command) {
     int i;
     char potentialKeyword[MAX_RESERVED_KEYWORD_SIZE];
     i = 0;
-    /* Iterate until we find a space. That's where the potential data def should end */
+    /* Iterate until we find a space. That's where the potential exter/entry declaration should end */
     while (*command != 0 && !isspace(*command)) {
         if (i >= MAX_RESERVED_KEYWORD_SIZE) {
             return 0;
@@ -401,43 +401,100 @@ int isExternOrEntry(char *command) {
     return 0;
 }
 
+void addToDataTable(char *inputRow, char *dataDefType) {
+    int num;
+
+    if (strcmp(dataDefType, ".string") == 0 ) {
+        printf("Adding .string data type\n");
+        // TODO ADD STRING
+    } else if (strcmp(dataDefType, ".data") == 0 ) {
+        printf("Adding .data data type. now inputRow is - '%s'\n", inputRow);
+        printf("Print all numbers - \n");
+        // TODO - 
+        // 1. Handle non digits
+        // 2. Handle negative numbers
+        while (*inputRow != 0) {
+            num = 0;
+            // printf("Inside outer while. Input row right now - %s\n", inputRow);
+            while (*inputRow != 0 && !isspace(*inputRow) && *inputRow != ',') {
+                num = num * 10;
+                // printf("%c", *inputRow);
+                if (!isdigit(*inputRow)) {
+                    printf("Woopsie! TODO HANDLE THIS\n");
+                }
+                num += (*inputRow - '0'); // Add the character digit as an int
+                inputRow++;
+            }
+            inputRow++;
+            trimLeadingWhitespace(inputRow);
+            printf("Dected number = %d\n", num);
+
+            memKeywordBinaryString *mkb1 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+            intToBinaryString(num, mkb1);
+            dataTable.rows[dataTable.dataCounter] = mkb1;
+            (dataTable.dataCounter)++;
+
+            printf("\n\n");
+        }
+    }
+}
+
 void firstIteration(symbolTable *symbTable) {
+    char symbolName[MAX_SYMBOL_NAME_LENGTH];
+    char dataDefType[MAX_RESERVED_KEYWORD_SIZE];
+    int isSymbolFlag = 0;
     // 1. Read row from file
-    // char inputRow[] = "XYZ: .data 5";
+    char inputRow[] = "XYZ: .data 5, 3, 1";
     // char inputRow[] = "  .data 5";
-    char inputRow[] = ".extern Z";
+    // char inputRow[] = ".extern Z";
     // char *dataTypeDef;
 
     trimLeadingWhitespace(inputRow);
 
     printf("firstIteration is working on %s\n", inputRow);
     // 2. Is it a symbol? 
-    if (isSymbolDefinition(inputRow)) {
-        printf("Row is a symbol!\n");
-    } else if (isDataDefinition(inputRow)) { // Is this an instruction to store data? (.string or .data)
-        printf("Row has no symbol but is a data def!\n");
-    } else if (isExternOrEntry(inputRow)) {
-        printf("Command is external/entry\n");
-        // Here we need to insert "EXTERN" into symbol table
-    } else {
-        printf("Nothing.... :(\n");
+    isSymbolFlag = isSymbolDefinition(inputRow);
+    if (isSymbolFlag) {
+        getSymbolName(inputRow, symbolName);
+        printf("Got symbol name = %s, left with %s\n", symbolName, inputRow);
     }
+    printf("isSymbolFlag = %d\n", isSymbolFlag);
 
-    // 3. If it's a symbol & symbol type '.data' or '.string' then add to symbol table & data table, and increase DC
+    trimLeadingWhitespace(inputRow);
 
-    symbolTableNode *symbNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
-    // char symbName[MAX_SYMBOL_NAME_LENGTH] = "X";
-    
-    // strcpy(symbRow->symbolName, symbName);
-    strcpy(symbNode->symbolName, "X");
-    symbNode->memoryAddress = dataTable.dataCounter;
-    // symbNode->memoryAddress = 654321;
-    symbNode->isExternal = 0;
-    symbNode->isDefinitionSymbol = 0;
-    symbNode->next = NULL;
-    printf("Initialized a node\n");
-    // printf("symbTable = %p\n", &symbTable);
-    addNodeToSymbolTable(symbTable, symbNode);
+    if (isDataDefinition(inputRow)) { // Is this an instruction to store data? (.string or .data)
+        printf("Row is a data def!\n");
+        
+        if (isSymbolFlag) {
+            printf("Data def AND symb flag is on!!!\n");
+
+            symbolTableNode *symbNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
+
+            strcpy(symbNode->symbolName, symbolName);
+            symbNode->memoryAddress = dataTable.dataCounter;
+            symbNode->isExternal = 0;
+            symbNode->isDefinitionSymbol = 0;
+            symbNode->next = NULL;
+            printf("Initialized a node\n");
+
+            addNodeToSymbolTable(symbTable, symbNode);
+        }
+        trimLeadingWhitespace(inputRow);
+        getDataDefinionType(inputRow, dataDefType);
+        printf("Got data def type = %s, left with %s\n", dataDefType, inputRow);
+        trimLeadingWhitespace(inputRow);
+        addToDataTable(inputRow, dataDefType);
+        
+    } else if (isExternOrEntry(inputRow)) {
+        printf("Command is external/entry.\n");
+        printf("TBD\n");
+        // Here we need to insert "EXTERN" into symbol table
+    } else { // Code declaration
+        printf("Nothing.... :(\n");
+        printf("TBD\n");
+    }
+    return;
+
 
     int x_val = 10;
     memKeywordBinaryString *mkb1 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
@@ -445,23 +502,23 @@ void firstIteration(symbolTable *symbTable) {
     dataTable.rows[dataTable.dataCounter] = mkb1;
     (dataTable.dataCounter)++;
 
-    symbolTableNode *symbNode2 = (symbolTableNode*)malloc(sizeof(symbolTableNode));
-    strcpy(symbNode2->symbolName, "Y");
-    symbNode2->memoryAddress = dataTable.dataCounter;
-    // symbNode2->memoryAddress = 123456;
-    symbNode2->isExternal = 0;
-    symbNode2->isDefinitionSymbol = 0;
-    symbNode2->next = NULL;
+    // symbolTableNode *symbNode2 = (symbolTableNode*)malloc(sizeof(symbolTableNode));
+    // strcpy(symbNode2->symbolName, "Y");
+    // symbNode2->memoryAddress = dataTable.dataCounter;
+    // // symbNode2->memoryAddress = 123456;
+    // symbNode2->isExternal = 0;
+    // symbNode2->isDefinitionSymbol = 0;
+    // symbNode2->next = NULL;
 
-    addNodeToSymbolTable(symbTable, symbNode2);
-    // symbTable.rows[symbTable.rowsCounter] = symbRow2;
-    // (symbTable.rowsCounter)++;
+    // addNodeToSymbolTable(symbTable, symbNode2);
+    // // symbTable.rows[symbTable.rowsCounter] = symbRow2;
+    // // (symbTable.rowsCounter)++;
 
-    int y_val = 7;
-    memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
-    intToBinaryString(y_val, mkb2);
-    dataTable.rows[dataTable.dataCounter] = mkb2;
-    (dataTable.dataCounter)++;
+    // int y_val = 7;
+    // memKeywordBinaryString *mkb2 = (memKeywordBinaryString*)malloc(sizeof(memKeywordBinaryString));
+    // intToBinaryString(y_val, mkb2);
+    // dataTable.rows[dataTable.dataCounter] = mkb2;
+    // (dataTable.dataCounter)++;
 }
 
 
@@ -469,12 +526,12 @@ void firstIteration(symbolTable *symbTable) {
 int main(int argc, char *argv[]) {
     symbolTable symbTable;
     initSymbolTable(&symbTable);
-    printf("Printing initial symbol table - \n");
-    printSymbolTable(&symbTable);
+    // printf("Printing initial symbol table - \n");
+    // printSymbolTable(&symbTable);
     printf("Data table size before 1st iteration = %d\n", dataTable.dataCounter);
     firstIteration(&symbTable);
-    printf("Printing symbol table after firstIteration - \n");
-    printSymbolTable(&symbTable);
+    // printf("Printing symbol table after firstIteration - \n");
+    // printSymbolTable(&symbTable);
 
     printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
     printDataTable();
@@ -525,7 +582,7 @@ int main(int argc, char *argv[]) {
     // char symbName3[MAX_SYMBOL_NAME_LENGTH];
     // printf("Command before getting symb name = '%s'\n", str3);
     // symbName3 = getSymbolName(str3);
-    // getSymbolName2(str3, symbName3);
+    // getSymbolName(str3, symbName3);
     // printf("Got symbol name %s from command '%s'\n", symbName3, str3);
 
     // ################### TEST IF COMMAND IS A DATA DEFINITION ###################
