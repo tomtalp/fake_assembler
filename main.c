@@ -13,10 +13,12 @@
 #define MAX_RESERVED_KEYWORD_SIZE 7
 #define RESERVED_KEYWORDS_COUNT 27
 #define DATA_DEFINITIONS_COUNT 2
+#define MAX_OP_CODE_CHARS_LENGTH 4
+#define OP_CODES_COUNT 16
 
 #define KEYWORD_ENCODING_TYPE_BITS 2
 #define KEYWORD_ADDRESSING_MODE_BITS 3
-#define KEYWORD_OPS_CODE_BITS 4
+#define KEYWORD_OP_CODE_BITS 4
 
 #define BASE_MEM_ADDRESS 100 /* The base memory address our program starts with*/
 
@@ -24,7 +26,7 @@
 typedef struct memKeyword {
     unsigned int encodingType : KEYWORD_ENCODING_TYPE_BITS;
     unsigned int targetAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
-    unsigned int opCode : KEYWORD_OPS_CODE_BITS;
+    unsigned int opCode : KEYWORD_OP_CODE_BITS;
     unsigned int sourceAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
 } memKeyword;
 
@@ -105,6 +107,18 @@ int isReservedKeyword(char *keyword) {
         }
     }
     return 0;
+}
+
+int getOpCodeNumber(char *opCode) {
+    int i;
+
+    for (i = 0; i < OP_CODES_COUNT; i++) {
+        if (strcmp(opCode, OP_CODES[i].code_name) == 0) {
+            return OP_CODES[i].op_code;
+        }
+    }
+
+    return -1;
 }
 
 void initDataTable() {
@@ -188,7 +202,7 @@ void memKeywordToBinaryString(memKeyword *mk, memKeywordBinaryString *mkb) {
     }
 
     /* Convert Operation code */
-    mask = 1 << KEYWORD_OPS_CODE_BITS-1;
+    mask = 1 << KEYWORD_OP_CODE_BITS-1;
     while (mask) {
         mkb->keyword[i] = getBinaryChar(mask, mk->opCode);
         i--;
@@ -218,6 +232,7 @@ void intToBinaryString(int n, memKeywordBinaryString *mkb) {
 void print_int_as_binary(int n, int expected_bits);
 
 void memKeyword_to_binary(memKeyword *mem) {
+    // TODO REMOVE MAGIC NUMBERS (3-1, 4-1, 2-1)
     // printf("sourceAddressingMode = ");
     print_int_as_binary(mem->sourceAddressingMode, 3-1);
     // printf("\n");
@@ -439,12 +454,39 @@ void addToDataTable(char *inputRow, char *dataDefType) {
     }
 }
 
+void getOpCode(char *inputRow, char *opCode) {
+    char *rawCommandStart = inputRow;
+    int opCodeSize;
+    printf("Received raw command = %s\n", inputRow);
+    
+    /* Locate the command name */
+    while (*rawCommandStart != 0 && !isspace(*rawCommandStart)) {
+        *opCode = *rawCommandStart;
+        opCode++;
+        opCodeSize++;
+        rawCommandStart++;
+    }
+
+    *opCode = '\0';
+    opCode = opCode - opCodeSize; /* Go back to beginning of string */
+
+    /* Remove the op code we extracted from the command */
+    while (*rawCommandStart != 0) {
+        *inputRow = *rawCommandStart;
+        inputRow++;
+        rawCommandStart++; 
+    }
+    *inputRow = '\0';
+}
+
 void firstIteration(symbolTable *symbTable) {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     char dataDefType[MAX_RESERVED_KEYWORD_SIZE];
+    char opCode[MAX_OP_CODE_CHARS_LENGTH];
     int isSymbolFlag = 0;
     // 1. Read row from file
-    char inputRow[] = "XYZ: .data 5, 3, 1";
+    char inputRow[] = "movv @r3, @r1";
+    // char inputRow[] = "XYZ: .data 5, 3, 1";
     // char inputRow[] = "  .data 5";
     // char inputRow[] = ".extern Z";
     // char *dataTypeDef;
@@ -488,10 +530,36 @@ void firstIteration(symbolTable *symbTable) {
     } else if (isExternOrEntry(inputRow)) {
         printf("Command is external/entry.\n");
         printf("TBD\n");
-        // Here we need to insert "EXTERN" into symbol table
-    } else { // Code declaration
-        printf("Nothing.... :(\n");
-        printf("TBD\n");
+        // Here we need to insert "EXTERN" into the symbol table
+    } else { // Code instruction
+        printf("Inside the Code instruction part\n");
+        if (isSymbolFlag) {
+            printf("Code instruction AND symb flag is on!!!\n");
+
+            symbolTableNode *symbNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
+
+            strcpy(symbNode->symbolName, symbolName);
+            symbNode->memoryAddress = codeTable.instructionCount;
+            symbNode->isExternal = 0;
+            symbNode->isDefinitionSymbol = 1;
+            symbNode->next = NULL;
+            printf("Initialized a node\n");
+
+            addNodeToSymbolTable(symbTable, symbNode);
+        }
+        // Handle the actual code instruction
+        trimLeadingWhitespace(inputRow);
+
+        // 1. Extract the op code
+        printf("Row before getting op code - '%s'\n", inputRow);
+        getOpCode(inputRow, opCode);
+        trimLeadingWhitespace(inputRow);
+        int opCodeNum = getOpCodeNumber(opCode);
+        if (opCodeNum == -1) {
+            printf("Op code %s doesn't exist!\n", opCode);
+            return;
+        }
+        printf("Row AFTER getting op code - '%s' , opCode = '%s' (#%d) \n", inputRow, opCode, opCodeNum);
     }
     return;
 
@@ -526,15 +594,25 @@ void firstIteration(symbolTable *symbTable) {
 int main(int argc, char *argv[]) {
     symbolTable symbTable;
     initSymbolTable(&symbTable);
-    // printf("Printing initial symbol table - \n");
-    // printSymbolTable(&symbTable);
+    printf("Printing initial symbol table - \n");
+    printSymbolTable(&symbTable);
     printf("Data table size before 1st iteration = %d\n", dataTable.dataCounter);
     firstIteration(&symbTable);
-    // printf("Printing symbol table after firstIteration - \n");
-    // printSymbolTable(&symbTable);
+    printf("Printing symbol table after firstIteration - \n");
+    printSymbolTable(&symbTable);
 
     printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
     printDataTable();
+
+    // printf("##############################\n");
+    // firstIteration(&symbTable);
+    // printf("Printing symbol table after second firstIteration - \n");
+    // printSymbolTable(&symbTable);
+
+    // printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
+    // printDataTable();
+
+    
 
     // FILE *fp;
     // char *commands[2] = {"MOV @r1, @r2", "X: .data 3"};
