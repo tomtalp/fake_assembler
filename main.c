@@ -485,8 +485,8 @@ void firstIteration(symbolTable *symbTable) {
     char opCode[MAX_OP_CODE_CHARS_LENGTH];
     int isSymbolFlag = 0;
     // 1. Read row from file
-    char inputRow[] = "movv @r3, @r1";
-    // char inputRow[] = "XYZ: .data 5, 3, 1";
+    // char inputRow[] = "movv @r3, @r1";
+    char inputRow[] = "XYZ: .data 5, 3, 1";
     // char inputRow[] = "  .data 5";
     // char inputRow[] = ".extern Z";
     // char *dataTypeDef;
@@ -495,7 +495,7 @@ void firstIteration(symbolTable *symbTable) {
 
     printf("firstIteration is working on %s\n", inputRow);
     // 2. Is it a symbol? 
-    isSymbolFlag = isSymbolDefinition(inputRow);
+    isSymbolFlag = isSymbolDefinition(inputRow); // TODO - Boolean should be unsigned char, not INT
     if (isSymbolFlag) {
         getSymbolName(inputRow, symbolName);
         printf("Got symbol name = %s, left with %s\n", symbolName, inputRow);
@@ -604,13 +604,13 @@ int main(int argc, char *argv[]) {
     printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
     printDataTable();
 
-    // printf("##############################\n");
-    // firstIteration(&symbTable);
-    // printf("Printing symbol table after second firstIteration - \n");
-    // printSymbolTable(&symbTable);
+    printf("##############################\n");
+    firstIteration(&symbTable);
+    printf("Printing symbol table after second firstIteration - \n");
+    printSymbolTable(&symbTable);
 
-    // printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
-    // printDataTable();
+    printf("Data table size AFTER 1st iteration = %d\n", dataTable.dataCounter);
+    printDataTable();
 
     
 
