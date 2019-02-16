@@ -2,43 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
-#define MAX_SYMBOL_NAME_LENGTH 31
-#define MAX_RESERVED_KEYWORD_SIZE 7
-#define RESERVED_KEYWORDS_COUNT 27
-#define DATA_DEFINITIONS_COUNT 2
-
-enum rowTypes {
-    CODE_INSTRUCTION,
-    DATA_DEFINITION,
-    EXTERNAL_DECLARATION,
-    ENTRY_DECLARATION
-};
-
-enum dataDefType {
-    DATA_TYPE,
-    STRING_TYPE
-};
-
-struct CODE_INSTRUCTION_ROW_METADATA {
-
-};
-
-struct DATA_DEFINITION_ROW_METADATA {
-    enum dataDefType type;
-};
-
-typedef struct parsedRow {
-    int originalLineNum;
-    int isValidRow;
-    int hasSymbol;
-    char symbolName[MAX_SYMBOL_NAME_LENGTH];
-    enum rowTypes rowType;
-    union {
-        struct CODE_INSTRUCTION_ROW_METADATA *codeRowMetadata;
-        struct DATA_DEFINITION_ROW_METADATA *dataRowMetadata; 
-    } *rowMetadata;
-} parsedRow;
+#include "parser.h"
 
 char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
     "r1", "r2", "r3", "r4", "r5", "r6", "r7",
@@ -47,8 +11,28 @@ char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
     "rts", "stop", "entry", "extern", "string", "data"
 };
 
-char *dataDefinitionKeywords[DATA_DEFINITIONS_COUNT] = {
-    ".data", ".string"
+dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
+    {".data", DATA_TYPE},
+    {".string", STRING_TYPE}
+};
+
+opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
+    {"mov", 0},
+    {"cmp", 1},
+    {"add", 2},
+    {"sub", 3},
+    {"not", 4},
+    {"clr", 5},
+    {"lea", 6},
+    {"inc", 7},
+    {"dec", 8},
+    {"jmp", 9},
+    {"bne", 10},
+    {"red", 11},
+    {"prn", 12},
+    {"jsr", 13},
+    {"rts", 14},
+    {"stop", 15}
 };
 
 void printParsedRow(parsedRow *pr) {
@@ -56,7 +40,20 @@ void printParsedRow(parsedRow *pr) {
         printf("Row has a symbol, called '%s' \n", pr->symbolName);
     }
     printf("Parsed row type = %d\n", pr->rowType);
-    pr->rowMetadata->dataRowMetadata->type;
+    // pr->rowMetadata->dataRowMetadata->type;
+    if (pr->rowType == DATA_DECLARATION) {
+        printf("Parsed row is of type 'data def' ");
+        if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
+            printf("with DATA type");
+        } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
+            printf("with STRING type");
+        }
+    } else if (pr->rowType == CODE_INSTRUCTION) {
+        printf("Parsed row is of type 'code instruction', instruction type %s with num %d \n", pr->rowMetadata.codeRowMetadata.oc.opCodeName, pr->rowMetadata.codeRowMetadata.oc.opCodeNum);
+    }
+
+    printf("\n");
+    
 }
 
 /*
@@ -118,6 +115,7 @@ void getRowType(char *inputRow, parsedRow *pr) {
     int i = 0;
     char firstKeyword[MAX_RESERVED_KEYWORD_SIZE];
     char *inputRowStart = inputRow;
+    int detectedRowType = 0;
 
     while (*inputRowStart != 0 && !isspace(*inputRowStart)) {
         if (i >= MAX_RESERVED_KEYWORD_SIZE) {
@@ -129,15 +127,49 @@ void getRowType(char *inputRow, parsedRow *pr) {
     }
     firstKeyword[i] = '\0'; // Terminate the first keyword
 
+    printf("Initial detected keyword = '%s'\n", firstKeyword);
+
     // What row type do we have?!
-    for (i = 0; i < DATA_DEFINITIONS_COUNT; i++) {
-        if (strcmp(firstKeyword, dataDefinitionKeywords[i]) == 0) {
-            pr->rowType = DATA_DEFINITION;
-            // pr->rowMetadata->dataRowMetadata = (DATA_DEFINITION_ROW_METADATA*)malloc(sizeof(DATA_DEFINITION_ROW_METADATA));
+    for (i = 0; i < DATA_DECLARATION_TYPES_COUNT; i++) {
+        if (strcmp(firstKeyword, LEGAL_DATA_DECLARATIONS[i].dataDefName) == 0) {
+            pr->rowType = DATA_DECLARATION;
+            detectedRowType = 1;
+            printf("Detected DATA DEFINITION\n");
+            pr->rowMetadata.dataRowMetadata.type = LEGAL_DATA_DECLARATIONS[i].dataDefCodeNum;
+            break;
         }
     }
 
-    printf("Initial detected keyword = '%s'\n", firstKeyword);
+    if (!detectedRowType) {
+        if (strcmp(firstKeyword, ".extern") == 0) {
+            pr->rowType = EXTERNAL_DECLARATION;
+            detectedRowType = 1;
+            printf("Detected EXTERNAL DECLARATION\n");
+        } else if (strcmp(firstKeyword, ".entry") == 0) {
+            pr->rowType = ENTRY_DECLARATION;
+            detectedRowType = 1;
+            printf("Detected ENTRY DECLARATION\n");
+        }
+    }
+
+    if (!detectedRowType) {
+        for (i = 0; i < OP_CODES_COUNT; i++) {
+            if (strcmp(firstKeyword, LEGAL_OP_CODES[i].opCodeName) == 0) {
+                printf("Detected code instruction with opcode %s with num %d\n", LEGAL_OP_CODES[i].opCodeName, LEGAL_OP_CODES[i].opCodeNum);
+                pr->rowType = CODE_INSTRUCTION;
+                pr->rowMetadata.codeRowMetadata.oc.opCodeName = LEGAL_OP_CODES[i].opCodeName;
+                pr->rowMetadata.codeRowMetadata.oc.opCodeNum = LEGAL_OP_CODES[i].opCodeNum;
+                detectedRowType = 1;
+                break;
+            }
+        }
+        
+    }    
+
+    if (!detectedRowType) {
+        pr->isValidRow = 0;
+        printf("Undefined row type\n");
+    }
 
 }
 
@@ -163,8 +195,10 @@ void parseRow(char *inputRow, parsedRow *pr) {
 int main() {
     char inputRow[] = "XYZ: .data 5, 3, 1";
     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
-
+    // printf("Parsed row before - \n");
+    // printParsedRow(pr);
     parseRow(inputRow, pr);
     printf("\n\n\n");
+    printf("Parsed row AFTER - \n");
     printParsedRow(pr);
 }
