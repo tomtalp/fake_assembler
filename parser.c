@@ -4,35 +4,43 @@
 #include <ctype.h>
 #include "parser.h"
 
-char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
-    "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-    "mov", "cmp", "add", "sub", "not", "clr", "lea",
-    "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
-    "rts", "stop", "entry", "extern", "string", "data"
-};
+// char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
+//     "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+//     "mov", "cmp", "add", "sub", "not", "clr", "lea",
+//     "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
+//     "rts", "stop", "entry", "extern", "string", "data"
+// };
 
 dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".data", DATA_TYPE},
     {".string", STRING_TYPE}
 };
 
+int foo(char *s1, int n1) {
+    printf("Inside a foo validator! s1 = %s, n1 = %d\n", s1, n1);
+}
+
+int bar(char *s1, int n1) {
+    printf("And this is a bar validator! s1 = %s, n1 = %d\n", s1, n1);
+}
+
 opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
-    {"mov", 0},
-    {"cmp", 1},
-    {"add", 2},
-    {"sub", 3},
-    {"not", 4},
-    {"clr", 5},
-    {"lea", 6},
-    {"inc", 7},
-    {"dec", 8},
-    {"jmp", 9},
-    {"bne", 10},
-    {"red", 11},
-    {"prn", 12},
-    {"jsr", 13},
-    {"rts", 14},
-    {"stop", 15}
+    {"mov", MOV, foo},
+    {"cmp", CMP, foo},
+    {"add", ADD, foo},
+    {"sub", SUB, foo},
+    {"not", NOT, foo},
+    {"clr", CLR, foo},
+    {"lea", LEA, foo},
+    {"inc", INC, foo},
+    {"dec", DEC, foo},
+    {"jmp", JMP, foo},
+    {"bne", BNE, foo},
+    {"red", RED, foo},
+    {"prn", PRN, foo},
+    {"jsr", JSR, foo},
+    {"rts", RTS, foo},
+    {"stop", STOP, bar}
 };
 
 void printParsedRow(parsedRow *pr) {
@@ -48,6 +56,9 @@ void printParsedRow(parsedRow *pr) {
         } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
             printf("with STRING type");
         }
+
+        printf("Raw data = '%s'\n", pr->rowMetadata.dataRowMetadata.rawData);
+
     } else if (pr->rowType == CODE_INSTRUCTION) {
         printf("Parsed row is of type 'code instruction', instruction type %s with num %d \n", pr->rowMetadata.codeRowMetadata.oc.opCodeName, pr->rowMetadata.codeRowMetadata.oc.opCodeNum);
     }
@@ -127,6 +138,14 @@ void getRowType(char *inputRow, parsedRow *pr) {
     }
     firstKeyword[i] = '\0'; // Terminate the first keyword
 
+    /* Remove the first keyword from inputRow */
+    while (*inputRowStart != 0) {
+        *inputRow = *inputRowStart;
+        inputRow++;
+        inputRowStart++; 
+    }
+    *inputRow = '\0';
+
     printf("Initial detected keyword = '%s'\n", firstKeyword);
 
     // What row type do we have?!
@@ -173,6 +192,50 @@ void getRowType(char *inputRow, parsedRow *pr) {
 
 }
 
+void getCodeOperands(char *inputRow, parsedRow *pr) {
+    printf("Inside getCodeOperands, extracting operands from '%s'\n", inputRow);
+
+    char *inputRowStart = inputRow;
+    char *firstOperand;
+    char *secondOperand;
+
+    /* Locate the first operand in the command */
+    while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
+        *firstOperand = *inputRowStart;
+        firstOperand++;
+        inputRowStart++;
+    }
+    
+    /* Terminate the first operand and get rid of the trailing ',' or ' ' if we picked one */
+    if (*(--firstOperand) == ',' || isspace(*(--firstOperand))) {
+        *(--firstOperand) = '\0'; 
+    } else {
+        *firstOperand = '\0'; 
+    }
+    printf("Done with first operand extraction = '%s'!\n", firstOperand);
+    trimLeadingWhitespace(inputRowStart);
+    printf("Trimmed input row\n");
+    /* Locate the second operand, if it exists the command */
+    while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
+        printf("Now scanning second\n");
+        *secondOperand = 'a'; // *** WHY DOES THIS THROW AN ERROR?! ***
+        *secondOperand = *inputRowStart;
+        secondOperand++;
+        inputRowStart++;
+    }
+    *secondOperand = '\0'; /* Terminate the second operand */
+    printf("Done with second operand extraction = '%s'!\n", secondOperand);
+    printf("Finished extracting operands! first = '%s', second = '%s'\n", firstOperand, secondOperand);
+    /* Remove the operands from inputRow */
+    while (*inputRowStart != 0) {
+        *inputRow = *inputRowStart;
+        inputRow++;
+        inputRowStart++; 
+    }
+    *inputRow = '\0';
+
+}
+
 void parseRow(char *inputRow, parsedRow *pr) {
     printf("1. Parsing '%s'\n", inputRow);
     
@@ -189,11 +252,22 @@ void parseRow(char *inputRow, parsedRow *pr) {
     printf("3. Left with '%s' after checking symbol\n", inputRow);
 
     getRowType(inputRow, pr);
+    trimLeadingWhitespace(inputRow);
+    printf("4. After getting row type, we're left with - '%s'\n", inputRow);
+
+    if (pr->rowType == DATA_DECLARATION) {
+        printf("So we're dealing with a data decl, lets get the data!\n");
+        strcpy(pr->rowMetadata.dataRowMetadata.rawData, inputRow);
+    } else if (pr->rowType == CODE_INSTRUCTION) {
+        printf("So dealing with a code instruction\n");
+        getCodeOperands(inputRow, pr);
+    }
 }
 
 
 int main() {
-    char inputRow[] = "XYZ: .data 5, 3, 1";
+    // char inputRow[] = "XYZ: .data 5, 3, 1";
+    char inputRow[] = "MOV @r1, @r2";
     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
     // printf("Parsed row before - \n");
     // printParsedRow(pr);
@@ -201,4 +275,6 @@ int main() {
     printf("\n\n\n");
     printf("Parsed row AFTER - \n");
     printParsedRow(pr);
+
+    // LEGAL_OP_CODES[15].validator("asd", 5);
 }
