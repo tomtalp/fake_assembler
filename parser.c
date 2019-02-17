@@ -194,36 +194,38 @@ void getRowType(char *inputRow, parsedRow *pr) {
 
 void getCodeOperands(char *inputRow, parsedRow *pr) {
     printf("Inside getCodeOperands, extracting operands from '%s'\n", inputRow);
-
+    int i;
     char *inputRowStart = inputRow;
-    char *firstOperand;
-    char *secondOperand;
+    char firstOperand[MAX_SYMBOL_NAME_LENGTH];
+    char secondOperand[MAX_SYMBOL_NAME_LENGTH];
+
 
     /* Locate the first operand in the command */
+    i = 0;
     while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
-        *firstOperand = *inputRowStart;
-        firstOperand++;
+        firstOperand[i] = *inputRowStart;
+        i++;
         inputRowStart++;
     }
     
     /* Terminate the first operand and get rid of the trailing ',' or ' ' if we picked one */
-    if (*(--firstOperand) == ',' || isspace(*(--firstOperand))) {
-        *(--firstOperand) = '\0'; 
+    if (firstOperand[i-1] == ',' || isspace(firstOperand[i-1])) {
+        firstOperand[i-1] = '\0'; 
     } else {
-        *firstOperand = '\0'; 
+        firstOperand[i] = '\0'; 
     }
     printf("Done with first operand extraction = '%s'!\n", firstOperand);
     trimLeadingWhitespace(inputRowStart);
     printf("Trimmed input row\n");
     /* Locate the second operand, if it exists the command */
+    i = 0;
     while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
         printf("Now scanning second\n");
-        *secondOperand = 'a'; // *** WHY DOES THIS THROW AN ERROR?! ***
-        *secondOperand = *inputRowStart;
-        secondOperand++;
+        secondOperand[i] = *inputRowStart;
+        i++;
         inputRowStart++;
     }
-    *secondOperand = '\0'; /* Terminate the second operand */
+    secondOperand[i] = '\0';  /* Terminate the second operand */
     printf("Done with second operand extraction = '%s'!\n", secondOperand);
     printf("Finished extracting operands! first = '%s', second = '%s'\n", firstOperand, secondOperand);
     /* Remove the operands from inputRow */
