@@ -4,6 +4,7 @@
 #define DATA_DECLARATION_TYPES_COUNT 2
 #define OP_CODES_COUNT 16
 #define MAX_INSTRUCTION_LENGTH 256 /* TODO - IS THIS OK? */
+#define REGISTERS_COUNT 7
 
 #define MOV 0
 #define CMP 1
@@ -30,6 +31,7 @@ enum ROW_TYPES {
 };
 
 enum LEGAL_ADDRESSING_MODES {
+    NO_OPERAND = 0,
     IMMEDIATE_MODE = 1,
     DIRECT_MODE = 3,
     REGISTER_MODE = 5
@@ -59,8 +61,10 @@ typedef struct opCode {
 
 struct CODE_INSTRUCTION_ROW_METADATA {
     opCode oc;
-    char *srcOperand;
-    char *destOperand;
+    char srcOperand[MAX_SYMBOL_NAME_LENGTH];
+    enum LEGAL_ADDRESSING_MODES srcOperandType;
+    char destOperand[MAX_SYMBOL_NAME_LENGTH];
+    enum LEGAL_ADDRESSING_MODES destOperandType;
 };
 
 struct DATA_DECLARATION_ROW_METADATA {

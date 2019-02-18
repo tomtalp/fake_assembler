@@ -11,6 +11,10 @@
 //     "rts", "stop", "entry", "extern", "string", "data"
 // };
 
+char *LEGAL_REGISTERS[REGISTERS_COUNT] = {
+    "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"
+};
+
 dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".data", DATA_TYPE},
     {".string", STRING_TYPE}
@@ -61,6 +65,17 @@ void printParsedRow(parsedRow *pr) {
 
     } else if (pr->rowType == CODE_INSTRUCTION) {
         printf("Parsed row is of type 'code instruction', instruction type %s with num %d \n", pr->rowMetadata.codeRowMetadata.oc.opCodeName, pr->rowMetadata.codeRowMetadata.oc.opCodeNum);
+        if (pr->rowMetadata.codeRowMetadata.srcOperandType == NO_OPERAND) {
+            printf("No source operand ");
+        } else {
+            printf("Source operand = '%s' (type %d) ", pr->rowMetadata.codeRowMetadata.srcOperand, pr->rowMetadata.codeRowMetadata.srcOperandType);
+        }
+        printf(" | ");
+        if (pr->rowMetadata.codeRowMetadata.destOperandType == NO_OPERAND) {
+            printf("No dest operand ");
+        } else {
+            printf("Destination operand = '%s' (type %d) ", pr->rowMetadata.codeRowMetadata.destOperand, pr->rowMetadata.codeRowMetadata.destOperandType);
+        }
     }
 
     printf("\n");
@@ -189,7 +204,69 @@ void getRowType(char *inputRow, parsedRow *pr) {
         pr->isValidRow = 0;
         printf("Undefined row type\n");
     }
+}
 
+int operandIsRegister(char *operand) {
+    int i;
+
+    for (i = 0; i < REGISTERS_COUNT; i++) {
+        if (strcmp(operand, LEGAL_REGISTERS[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// TODO - Handle negative numbers
+int operandIsNumber(char *operand) {
+    while (*operand != '\0') {
+        if (!isdigit(*operand)) {
+            return 0;
+        }
+    } 
+    return 1;
+}
+
+void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand) {
+    if (*secondOperand == '\0' && *firstOperand == '\0') {
+        pr->rowMetadata.codeRowMetadata.srcOperandType = NO_OPERAND;
+
+        pr->rowMetadata.codeRowMetadata.destOperandType = NO_OPERAND;
+
+    } else if (*firstOperand != '\0' && *secondOperand == '\0') { /* Only one operand (dest) */
+        strcpy(pr->rowMetadata.codeRowMetadata.destOperand, firstOperand);
+        if (operandIsRegister(firstOperand)) {
+            pr->rowMetadata.codeRowMetadata.destOperandType = REGISTER_MODE;
+        } else if (operandIsNumber(firstOperand)) {
+            pr->rowMetadata.codeRowMetadata.destOperandType = IMMEDIATE_MODE;
+        } else {
+            /* Assuming the token exists. If it doesn't, we'll throw an exception later */
+            pr->rowMetadata.codeRowMetadata.destOperandType = DIRECT_MODE;
+        }
+
+    } else { /* Both operands are set */
+
+        strcpy(pr->rowMetadata.codeRowMetadata.srcOperand, firstOperand);
+        strcpy(pr->rowMetadata.codeRowMetadata.destOperand, secondOperand);
+
+        if (operandIsRegister(firstOperand)) {
+            pr->rowMetadata.codeRowMetadata.srcOperandType = REGISTER_MODE;
+        } else if (operandIsNumber(firstOperand)) {
+            pr->rowMetadata.codeRowMetadata.srcOperandType = IMMEDIATE_MODE;
+        } else {
+            /* Assuming the token exists. If it doesn't, we'll throw an exception later */
+            pr->rowMetadata.codeRowMetadata.srcOperandType = DIRECT_MODE;
+        }
+
+        if (operandIsRegister(secondOperand)) {
+            pr->rowMetadata.codeRowMetadata.destOperandType = REGISTER_MODE;
+        } else if (operandIsNumber(secondOperand)) {
+            pr->rowMetadata.codeRowMetadata.destOperandType = IMMEDIATE_MODE;
+        } else {
+            /* Assuming the token exists. If it doesn't, we'll throw an exception later */
+            pr->rowMetadata.codeRowMetadata.destOperandType = DIRECT_MODE;
+        }
+    }
 }
 
 void getCodeOperands(char *inputRow, parsedRow *pr) {
@@ -220,7 +297,6 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
     /* Locate the second operand, if it exists the command */
     i = 0;
     while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
-        printf("Now scanning second\n");
         secondOperand[i] = *inputRowStart;
         i++;
         inputRowStart++;
@@ -235,6 +311,8 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
         inputRowStart++; 
     }
     *inputRow = '\0';
+
+    getOperandTypes(pr, firstOperand, secondOperand);
 
 }
 
@@ -269,7 +347,8 @@ void parseRow(char *inputRow, parsedRow *pr) {
 
 int main() {
     // char inputRow[] = "XYZ: .data 5, 3, 1";
-    char inputRow[] = "MOV @r1, @r2";
+    char inputRow[] = "mov @r1, @r2";
+    // char inputRow[] = "MOV";
     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
     // printf("Parsed row before - \n");
     // printParsedRow(pr);
