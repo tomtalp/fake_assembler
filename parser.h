@@ -83,3 +83,16 @@ typedef struct parsedRow {
         struct DATA_DECLARATION_ROW_METADATA dataRowMetadata; 
     } rowMetadata;
 } parsedRow;
+
+void printParsedRow(parsedRow *pr);
+void trimLeadingWhitespace(char *source);
+int isSymbolDefinition(char *inputRow);
+void getSymbolName(char *inputRow, char *symbolName);
+int getDataDefType(char *dataDef);
+void getRowType(char *inputRow, parsedRow *pr);
+int operandIsRegister(char *operand);
+int operandIsNumber(char *operand);
+void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand);
+void getCodeOperands(char *inputRow, parsedRow *pr);
+void parseRow(char *inputRow, parsedRow *pr, int rowNum);
+

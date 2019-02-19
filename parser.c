@@ -316,9 +316,11 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
 
 }
 
-void parseRow(char *inputRow, parsedRow *pr) {
-    printf("1. Parsing '%s'\n", inputRow);
-    
+void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
+
+    printf("1. Parsing '%s' from row number #%d\n", inputRow, rowNum);
+    pr->originalLineNum = rowNum;
+    pr->isValidRow = 1; // Assume valid row until proving otherwise
     trimLeadingWhitespace(inputRow);
 
     printf("2. After initial whitespace trimming - '%s'\n", inputRow);
@@ -345,17 +347,17 @@ void parseRow(char *inputRow, parsedRow *pr) {
 }
 
 
-int main() {
-    // char inputRow[] = "XYZ: .data 5, 3, 1";
-    char inputRow[] = "mov @r1, @r2";
-    // char inputRow[] = "MOV";
-    parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
-    // printf("Parsed row before - \n");
-    // printParsedRow(pr);
-    parseRow(inputRow, pr);
-    printf("\n\n\n");
-    printf("Parsed row AFTER - \n");
-    printParsedRow(pr);
+// int main() {
+//     // char inputRow[] = "XYZ: .data 5, 3, 1";
+//     char inputRow[] = "mov @r1, @r2";
+//     // char inputRow[] = "MOV";
+//     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
+//     // printf("Parsed row before - \n");
+//     // printParsedRow(pr);
+//     parseRow(inputRow, pr);
+//     printf("\n\n\n");
+//     printf("Parsed row AFTER - \n");
+//     printParsedRow(pr);
 
-    // LEGAL_OP_CODES[15].validator("asd", 5);
-}
+//     // LEGAL_OP_CODES[15].validator("asd", 5);
+// }
