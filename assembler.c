@@ -4,12 +4,14 @@
 #include <ctype.h>
 #include "parser.h"
 #include "dataStructures.h"
+#include "utils.h"
 
 void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     /* We're supposed to be dealing with a sequence of integers. We'll parse each one 
     and cast into an int, and insert into the data table */
 
     int num, i;
+    char intAsBinaryString[MAX_KEYWORD_BINARY_LENGTH];
 
     i = 0;
 
@@ -24,7 +26,10 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
             num += pr->rowMetadata.dataRowMetadata.rawData[i] - '0'; // Add the character digit as an int
             i++;
         }
-        printf("Dected number = %d\n", num);
+        i++; /* Skip the comma or space that just made us stop */
+        castIntToBinaryString(num, intAsBinaryString);
+        printf("Dected number = %d (as binary = '%s'\n", num, intAsBinaryString);
+        
     }
 }
 
