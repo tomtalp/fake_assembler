@@ -30,7 +30,7 @@ typedef struct codeInstructionsTable {
 encoded in binary*/
 typedef struct dataDefinitionsTables {
     int dataCounter;
-    memKeywordBinaryString *rows[MAX_INSTRUCTIONS];
+    char *rows[MAX_INSTRUCTIONS];
 } dataDefinitionsTables;
 
 typedef struct symbolTableNode {

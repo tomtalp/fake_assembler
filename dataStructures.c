@@ -38,6 +38,6 @@ void printDataTable(dataDefinitionsTables *dataTable) {
 
     printf("Data Table has %d rows\n", dataTable->dataCounter);
     for (i = 0; i < dataTable->dataCounter; i++) {
-        printf("Data table row #%d mem addr = %s\n", i, dataTable->rows[i]->keyword);
+        printf("Data table row #%d mem addr = %s\n", i, dataTable->rows[i]);
     }
 }

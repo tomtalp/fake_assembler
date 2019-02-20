@@ -27,8 +27,15 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
             i++;
         }
         i++; /* Skip the comma or space that just made us stop */
-        castIntToBinaryString(num, intAsBinaryString);
-        printf("Dected number = %d (as binary = '%s'\n", num, intAsBinaryString);
+        // castIntToBinaryString(num, intAsBinaryString);
+        // printf("Dected number = %d (as binary = '%s'). Adding to DC = %d\n", num, intAsBinaryString, dataTable->dataCounter);
+        dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+        castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter]);
+        
+
+        // strcpy(dataTable->rows[dataTable->dataCounter], intAsBinaryString); 
+        // dataTable->rows[dataTable->dataCounter] = mkb1;
+        dataTable->dataCounter++;
         
     }
 }
