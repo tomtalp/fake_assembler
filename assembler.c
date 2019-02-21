@@ -15,6 +15,10 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
 
     i = 0;
 
+    if (pr->hasSymbol) {
+        addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, 0, 0);
+    }
+
     for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0; i++) {
         num = 0;
 
@@ -27,21 +31,17 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
             i++;
         }
         i++; /* Skip the comma or space that just made us stop */
-        // castIntToBinaryString(num, intAsBinaryString);
-        // printf("Dected number = %d (as binary = '%s'). Adding to DC = %d\n", num, intAsBinaryString, dataTable->dataCounter);
+
         dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
         castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter]);
         
-
-        // strcpy(dataTable->rows[dataTable->dataCounter], intAsBinaryString); 
-        // dataTable->rows[dataTable->dataCounter] = mkb1;
         dataTable->dataCounter++;
-        
     }
 }
 
 void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
-    printf("Adding string data\n");
+    printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
+
 }
 
 void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
@@ -54,18 +54,79 @@ void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, pa
 }
 
 void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable) {
-    char inputRow[] = "XYZ: .data 5, 3, 1";
+    FILE *fp;
+    char *path = "./test.as";
+    char inputRow[MAX_INSTRUCTION_LENGTH];
+    int rowNum = 0;
 
-    parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
-    parseRow(inputRow, pr, 1);
+    fp = fopen(path, "r");
 
-    if (!pr->isValidRow) {
-        printf("Row number #%d has errors!\n", pr->originalLineNum);
+    if (fp == NULL) {
+        printf("Failed opening file '%s'\n", path);
     } else {
-        if (pr->rowType == DATA_DECLARATION) {
-            addToDataTable(symbTable, dataTable, pr);
-            // pr->rowMetadata.dataRowMetadata.rawData;
-        }
-    }
+        while(fgets(inputRow, MAX_INSTRUCTION_LENGTH, fp) != NULL) {
+            rowNum++;
+            if (isEmptyRow(inputRow)) {
+                continue;
+            }
+            printf("Got row '%s'\n", inputRow);
+            parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
+            parseRow(inputRow, pr, rowNum);
+            printf("Done parsing row %d\n", rowNum);
 
+            if (!pr->isValidRow) {
+                printf("Row number #%d has errors!\n", pr->originalLineNum);
+            } else {
+                if (pr->rowType == DATA_DECLARATION) {
+                    addToDataTable(symbTable, dataTable, pr);
+                }
+            }
+
+        }
+        fclose(fp);
+    }
+ 
 }
+
+// void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable) {
+//     char inputRow[] = "XYZ: .data 5, 3, 1";
+
+//     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
+//     parseRow(inputRow, pr, 1);
+//     printf("Done parsing row 1\n");
+
+//     if (!pr->isValidRow) {
+//         printf("Row number #%d has errors!\n", pr->originalLineNum);
+//     } else {
+//         if (pr->rowType == DATA_DECLARATION) {
+//             addToDataTable(symbTable, dataTable, pr);
+//         }
+//     }
+
+//     char inputRow2[] = "N1: .data 25";
+
+//     parsedRow *pr2 = (parsedRow*)malloc(sizeof(parsedRow));
+//     parseRow(inputRow2, pr2, 2);
+
+//     if (!pr2->isValidRow) {
+//         printf("Row number #%d has errors!\n", pr2->originalLineNum);
+//     } else {
+//         if (pr2->rowType == DATA_DECLARATION) {
+//             addToDataTable(symbTable, dataTable, pr2);
+//         }
+//     }
+
+//     char inputRow3[] = "N2: .data 10";
+
+//     parsedRow *pr3 = (parsedRow*)malloc(sizeof(parsedRow));
+//     parseRow(inputRow3, pr3, 3);
+
+//     if (!pr3->isValidRow) {
+//         printf("Row number #%d has errors!\n", pr3->originalLineNum);
+//     } else {
+//         if (pr3->rowType == DATA_DECLARATION) {
+//             addToDataTable(symbTable, dataTable, pr3);
+//         }
+//     }
+
+// }

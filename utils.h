@@ -2,3 +2,4 @@
 
 char getBinaryChar(int mask, int value);
 void castIntToBinaryString(int n, char *binaryStr);
+int isEmptyRow(char *inputRow);
