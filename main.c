@@ -18,6 +18,9 @@ int main() {
     printf("Data table after first iteration - \n");
     printDataTable(&dataTable);
 
+    printf("Symbol table after first iteration - \n");
+    printSymbolTable(&symbTable);
+
     // char s1[MAX_KEYWORD_BINARY_LENGTH];
     // printf("s1 when starting = %s\n", s1);
     // intToBinaryString(10, s1);

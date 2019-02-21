@@ -37,7 +37,7 @@ typedef struct symbolTableNode {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memoryAddress;
     int isExternal;
-    int isDefinitionSymbol; /* Is the symbol pointing to a definition statement? */
+    int isInstruction; /* Is the symbol pointing to a code instruction statement? */
     struct symbolTableNode *next;
 } symbolTableNode;
 
@@ -48,5 +48,5 @@ typedef struct symbolTable {
 
 void initSymbolTable(symbolTable *symbTable);
 void printSymbolTable(symbolTable *tb);
-void addNodeToSymbolTable(symbolTable *tb, symbolTableNode *newNode);
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction);
 void printDataTable(dataDefinitionsTables *dataTable);

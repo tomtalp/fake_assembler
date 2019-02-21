@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "dataStructures.h"
 
 void initSymbolTable(symbolTable *symbTable) {
@@ -19,8 +20,17 @@ void printSymbolTable(symbolTable *tb) {
     }
 }
 
-void addNodeToSymbolTable(symbolTable *tb, symbolTableNode *newNode) {
+/* TODO - Do new nodes need to be added in a sorted way? */
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction) {
+    symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
+
+    /* Initialize the new node */
+    strcpy(newNode->symbolName, symbolName);
+    newNode->memoryAddress = memAddress;
+    newNode->isExternal = isExternal;
+    newNode->isInstruction = isInstruction;
+    newNode->next = NULL;
 
     if (tb->symbolsCounter == 0) {
         tb->head = newNode;
@@ -28,6 +38,7 @@ void addNodeToSymbolTable(symbolTable *tb, symbolTableNode *newNode) {
         return;
     }
 
+    temp = tb->head->next;
     tb->head->next = newNode;
     newNode->next = temp;
     tb->symbolsCounter += 1;
