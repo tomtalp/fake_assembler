@@ -1,7 +1,29 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "utils.h"
+#include "stdlib.h"
 // #include "dataStructures.h"
+
+
+/*
+    Trim all leading whitespaces in the received source string. This function modifies the original string!
+
+    @param source (*char) - The string to be trimmed
+*/
+void trimLeadingWhitespace(char *source) {
+    char *start = source;
+    
+    while (isspace(*start)) {
+        start++;
+    }
+
+    while (*start != 0) {
+        *source = *start;
+        source++;
+        start++;
+    }   
+    *source = '\0'; /* Terminate the string */
+}
 
 char getBinaryChar(int mask, int value) {
     char val;
@@ -32,6 +54,16 @@ int isEmptyRow(char *inputRow) {
         inputRow++;
     }
     return 1;
+}
+
+int isCommentRow(char *inputRow) {
+    trimLeadingWhitespace(inputRow);
+    return *inputRow == ';';
+}
+
+// TODO - handle negative numbers
+int strToInt(char *str) {
+    return atoi(str);
 }
 
 void memKeywordToBinaryString(memKeyword *mem, char *binaryStr) {

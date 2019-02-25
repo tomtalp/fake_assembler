@@ -5,4 +5,6 @@
 char getBinaryChar(int mask, int value);
 void castIntToBinaryString(int n, char *binaryStr, int sizeOfBinaryKeyword);
 int isEmptyRow(char *inputRow);
+int isCommentRow(char *inputRow);
+int strToInt(char *str);
 void memKeywordToBinaryString(memKeyword *mem, char *binaryStr);
