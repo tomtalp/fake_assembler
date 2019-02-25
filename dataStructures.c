@@ -32,16 +32,25 @@ void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int
     newNode->isInstruction = isInstruction;
     newNode->next = NULL;
 
-    if (tb->symbolsCounter == 0) {
+    if (tb->symbolsCounter == 0) { /* Handle empty list */
         tb->head = newNode;
         tb->symbolsCounter += 1;
         return;
     }
 
-    temp = tb->head->next;
-    tb->head->next = newNode;
-    newNode->next = temp;
+    temp = tb->head;
+
+    while (temp->next) { /* Go to end of list */
+        temp = temp->next;
+    }
+
+    temp->next = newNode;
     tb->symbolsCounter += 1;
+
+    // temp = tb->head->next;
+    // tb->head->next = newNode;
+    // newNode->next = temp;
+    
 }
 
 void printDataTable(dataDefinitionsTables *dataTable) {
