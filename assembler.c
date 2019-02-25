@@ -91,9 +91,13 @@ void addEncodingTypeToBinaryKeyword(char *keyword, int encType) {
     memcpy(keyword + CODE_INSTRUCTION_KEYWORD_DATA_SIZE, encTypeBinary, ENCODING_TYPES_MAX_LENGTH);
 }
 
-void addImmediateValueToBinaryKeyword(char *keyword, int immediateValue) {
+void addImmediateValueToBinaryKeyword(char *keyword, char *immediateValueStr) {
+    int immediateVal;
     char binaryVal[CODE_INSTRUCTION_KEYWORD_DATA_SIZE];
-    castIntToBinaryString(immediateValue, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
+
+    immediateVal = strToInt(immediateValueStr);
+
+    castIntToBinaryString(immediateVal, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
     memcpy(keyword, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
 }
 
@@ -123,17 +127,69 @@ void addToCodeTable(codeInstructionsTable *codeTable, parsedRow *pr) {
                 addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], 0, 1); /* Add an empty src operand */
                 addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.destOperand), 0); /* Add the dest register  operand */
                 addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+
             } else if (pr->rowMetadata.codeRowMetadata.destOperandType == IMMEDIATE_MODE) {
                 addImmediateValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], pr->rowMetadata.codeRowMetadata.destOperand);
                 addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+            } else { // Direct mode 
+                printf("Direct mode\n");
+                memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
             }
             codeTable->instructionCount++;
-
-            
         }
     } else { /* Both operands are set, an */
-        if (pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE && pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE) {
-            printf("Both operands are registers, so they fit in the same keyword!\n");
+        if (pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE && pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE) {
+            printf("Two registers!\n");
+            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); /* We'll only need one row, 2 registers fit in 1 kw */
+            addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.srcOperand), 1); 
+            addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.destOperand), 0);
+            addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+
+            codeTable->instructionCount++;
+        } else {
+            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); 
+    
+            /* Add source */
+            switch ( pr->rowMetadata.codeRowMetadata.srcOperandType)
+            {
+                case REGISTER_MODE:
+                    addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.srcOperand), 1);
+                    addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], 0, 0); /* Add an empty dest register  operand */
+                    addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+                    break;
+                
+                case IMMEDIATE_MODE:
+                    addImmediateValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], pr->rowMetadata.codeRowMetadata.srcOperand);
+                    addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+
+                case DIRECT_MODE:
+                    memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
+                default:
+                    break;
+            }
+
+            codeTable->instructionCount++;
+            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); 
+
+            /* Add dest */
+            switch ( pr->rowMetadata.codeRowMetadata.destOperandType)
+            {
+                case REGISTER_MODE:
+                    addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.destOperand), 1);
+                    addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], 0, 0); /* Add an empty dest register  operand */
+                    addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+                    break;
+                
+                case IMMEDIATE_MODE:
+                    addImmediateValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], pr->rowMetadata.codeRowMetadata.destOperand);
+                    addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+
+                case DIRECT_MODE:
+                    memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
+                default:
+                    break;
+            }    
+            codeTable->instructionCount++;    
         }
     }
 
@@ -152,7 +208,7 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
     } else {
         while(fgets(inputRow, MAX_INSTRUCTION_LENGTH, fp) != NULL) {
             rowNum++;
-            if (isEmptyRow(inputRow)) {
+            if (isEmptyRow(inputRow) || isCommentRow(inputRow)) {
                 continue;
             }
             printf("Got row '%s'\n", inputRow);
@@ -173,48 +229,4 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
         }
         fclose(fp);
     }
- 
 }
-
-// void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable) {
-//     char inputRow[] = "XYZ: .data 5, 3, 1";
-
-//     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
-//     parseRow(inputRow, pr, 1);
-//     printf("Done parsing row 1\n");
-
-//     if (!pr->isValidRow) {
-//         printf("Row number #%d has errors!\n", pr->originalLineNum);
-//     } else {
-//         if (pr->rowType == DATA_DECLARATION) {
-//             addToDataTable(symbTable, dataTable, pr);
-//         }
-//     }
-
-//     char inputRow2[] = "N1: .data 25";
-
-//     parsedRow *pr2 = (parsedRow*)malloc(sizeof(parsedRow));
-//     parseRow(inputRow2, pr2, 2);
-
-//     if (!pr2->isValidRow) {
-//         printf("Row number #%d has errors!\n", pr2->originalLineNum);
-//     } else {
-//         if (pr2->rowType == DATA_DECLARATION) {
-//             addToDataTable(symbTable, dataTable, pr2);
-//         }
-//     }
-
-//     char inputRow3[] = "N2: .data 10";
-
-//     parsedRow *pr3 = (parsedRow*)malloc(sizeof(parsedRow));
-//     parseRow(inputRow3, pr3, 3);
-
-//     if (!pr3->isValidRow) {
-//         printf("Row number #%d has errors!\n", pr3->originalLineNum);
-//     } else {
-//         if (pr3->rowType == DATA_DECLARATION) {
-//             addToDataTable(symbTable, dataTable, pr3);
-//         }
-//     }
-
-// }

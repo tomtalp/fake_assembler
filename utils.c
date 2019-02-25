@@ -36,7 +36,6 @@ char getBinaryChar(int mask, int value) {
 void castIntToBinaryString(int n, char *binaryStr, int sizeOfBinaryKeyword) {
     int mask, i;
     i = 0;
-    printf("n = %d\n", n);
     mask = 1 << (sizeOfBinaryKeyword-1);
     while (mask) {
         *binaryStr = getBinaryChar(mask, n);

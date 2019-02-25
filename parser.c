@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "parser.h"
+#include "utils.h"
 
 // char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
 //     "r1", "r2", "r3", "r4", "r5", "r6", "r7",
@@ -92,25 +93,6 @@ void printParsedRow(parsedRow *pr) {
     
 }
 
-/*
-    Trim all leading whitespaces in the received source string. This function modifies the original string!
-
-    @param source (*char) - The string to be trimmed
-*/
-void trimLeadingWhitespace(char *source) {
-    char *start = source;
-    
-    while (isspace(*start)) {
-        start++;
-    }
-
-    while (*start != 0) {
-        *source = *start;
-        source++;
-        start++;
-    }   
-    *source = '\0'; /* Terminate the string */
-}
 
 int isSymbolDefinition(char *inputRow) {
     if (strchr(inputRow, ':') == NULL) {
@@ -234,6 +216,7 @@ int operandIsNumber(char *operand) {
         if (!isdigit(*operand)) {
             return 0;
         }
+        operand++;
     } 
     return 1;
 }
