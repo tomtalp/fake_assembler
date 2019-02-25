@@ -339,3 +339,44 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
         getCodeOperands(inputRow, pr);
     }
 }
+
+void initParsedRowList(parsedRowList *prList) {
+    printf("inside initParsedRowList\n");
+    prList->head = NULL;
+    prList->parsedRowsCounter = 0;
+}
+
+void addParsedRowToList(parsedRowList *prList, parsedRow *pr) {
+    parsedRowNode *newNode = (parsedRowNode*)malloc(sizeof(parsedRowNode));
+    parsedRowNode *temp = (parsedRowNode*)malloc(sizeof(parsedRowNode));
+
+    /* Initialize the new node */
+    newNode->pr = *pr;
+    newNode->next = NULL;
+
+    if (prList->parsedRowsCounter == 0) { /* Handle empty list */
+        prList->head = newNode;
+        prList->parsedRowsCounter += 1;
+        return;
+    }
+
+    temp = prList->head;
+
+    while (temp->next) { /* Go to end of list */
+        temp = temp->next;
+    }
+
+    temp->next = newNode;
+    prList->parsedRowsCounter += 1;
+}
+
+void printParsedRowsList(parsedRowList *prList) {
+    int i;
+
+    parsedRowNode *temp = prList->head;
+
+    printf("Parsed Rows list has has %d rows\n", prList->parsedRowsCounter);
+    for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
+        printf("Row #%d is of type %d\n", temp->pr.originalLineNum, temp->pr.rowType);
+    }
+}

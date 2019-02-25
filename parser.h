@@ -99,6 +99,16 @@ typedef struct parsedRow {
     } rowMetadata;
 } parsedRow;
 
+typedef struct parsedRowNode {
+    parsedRow pr;
+    struct parsedRowNode *next;
+} parsedRowNode;
+
+typedef struct parsedRowList {
+    parsedRowNode *head;
+    int parsedRowsCounter;
+} parsedRowList;
+
 void printParsedRow(parsedRow *pr);
 void trimLeadingWhitespace(char *source);
 int isSymbolDefinition(char *inputRow);
@@ -110,4 +120,6 @@ int operandIsNumber(char *operand);
 void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand);
 void getCodeOperands(char *inputRow, parsedRow *pr);
 void parseRow(char *inputRow, parsedRow *pr, int rowNum);
-
+void initParsedRowList(parsedRowList *prList);
+void addParsedRowToList(parsedRowList *prList, parsedRow *pr);
+void printParsedRowsList(parsedRowList *prList);

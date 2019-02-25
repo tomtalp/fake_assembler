@@ -195,9 +195,10 @@ void addToCodeTable(codeInstructionsTable *codeTable, parsedRow *pr) {
 
 }
 
-void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable) {
+void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     FILE *fp;
-    char *path = "./test_single_ci.as";
+    // char *path = "./test_single_ci.as";
+    char *path = "./test.as";
     char inputRow[MAX_INSTRUCTION_LENGTH];
     int rowNum = 0;
 
@@ -214,6 +215,7 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
             printf("Got row '%s'\n", inputRow);
             parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
             parseRow(inputRow, pr, rowNum);
+            addParsedRowToList(prList, pr);
             printf("Done parsing row %d\n", rowNum);
 
             if (!pr->isValidRow) {
@@ -229,4 +231,8 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
         }
         fclose(fp);
     }
+}
+
+void secondIteration() {
+
 }

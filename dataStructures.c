@@ -20,7 +20,6 @@ void printSymbolTable(symbolTable *tb) {
     }
 }
 
-/* TODO - Do new nodes need to be added in a sorted way? */
 void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction) {
     symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
