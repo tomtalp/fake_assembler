@@ -52,3 +52,12 @@ void printDataTable(dataDefinitionsTables *dataTable) {
         printf("Data table row #%d mem addr = %s\n", i, dataTable->rows[i]);
     }
 }
+
+void printCodeTable(codeInstructionsTable *codeTable) {
+    int i;
+
+    printf("Code Table has %d rows\n", codeTable->instructionCount);
+    for (i = 0; i < codeTable->instructionCount; i++) {
+        printf("Code table row #%d mem addr = %s\n", i, codeTable->rows[i]);
+    }
+}

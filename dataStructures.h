@@ -6,11 +6,10 @@
 #define MAX_INSTRUCTIONS 1024
 #define MAX_SYMBOL_NAME_LENGTH 31
 
-
 /* Representation of a keyword in INT's */ 
 typedef struct memKeyword {
     unsigned int encodingType : KEYWORD_ENCODING_TYPE_BITS;
-    unsigned int targetAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
+    unsigned int destAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
     unsigned int opCode : KEYWORD_OP_CODE_BITS;
     unsigned int sourceAddressingMode : KEYWORD_ADDRESSING_MODE_BITS;
 } memKeyword;
@@ -23,7 +22,8 @@ typedef struct memKeywordBinaryString{
 /* The code instructions section - contains the actual code instructions  */
 typedef struct codeInstructionsTable {
     int instructionCount;
-    memKeywordBinaryString *rows[MAX_INSTRUCTIONS];
+    // memKeywordBinaryString *rows[MAX_INSTRUCTIONS];
+    char *rows[MAX_INSTRUCTIONS];
 } codeInstructionsTable;
 
 /* The data definition section - contains the data counter (DC) and an array of data value
@@ -50,3 +50,4 @@ void initSymbolTable(symbolTable *symbTable);
 void printSymbolTable(symbolTable *tb);
 void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction);
 void printDataTable(dataDefinitionsTables *dataTable);
+void printCodeTable(codeInstructionsTable *codeTable);

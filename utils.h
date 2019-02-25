@@ -1,5 +1,8 @@
+#include "dataStructures.h"
+
 #define MAX_KEYWORD_BINARY_LENGTH 12
 
 char getBinaryChar(int mask, int value);
-void castIntToBinaryString(int n, char *binaryStr);
+void castIntToBinaryString(int n, char *binaryStr, int sizeOfBinaryKeyword);
 int isEmptyRow(char *inputRow);
+void memKeywordToBinaryString(memKeyword *mem, char *binaryStr);

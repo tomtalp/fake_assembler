@@ -12,8 +12,18 @@
 // };
 
 char *LEGAL_REGISTERS[REGISTERS_COUNT] = {
-    "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"
+    "@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"
 };
+
+// registerKeyword LEGAL_REGISTERS[REGISTERS_COUNT] = {
+//     {"@r1", 1},
+//     {"@r2", 2},
+//     {"@r3", 3},
+//     {"@r4", 4},
+//     {"@r5", 5},
+//     {"@r6", 6},
+//     {"@r7", 7}
+// };
 
 dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".data", DATA_TYPE},
@@ -210,6 +220,7 @@ int operandIsRegister(char *operand) {
     int i;
 
     for (i = 0; i < REGISTERS_COUNT; i++) {
+        // if (strcmp(operand, LEGAL_REGISTERS[i].keyword) == 0) {
         if (strcmp(operand, LEGAL_REGISTERS[i]) == 0) {
             return 1;
         }
@@ -345,19 +356,3 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
         getCodeOperands(inputRow, pr);
     }
 }
-
-
-// int main() {
-//     // char inputRow[] = "XYZ: .data 5, 3, 1";
-//     char inputRow[] = "mov @r1, @r2";
-//     // char inputRow[] = "MOV";
-//     parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
-//     // printf("Parsed row before - \n");
-//     // printParsedRow(pr);
-//     parseRow(inputRow, pr);
-//     printf("\n\n\n");
-//     printf("Parsed row AFTER - \n");
-//     printParsedRow(pr);
-
-//     // LEGAL_OP_CODES[15].validator("asd", 5);
-// }

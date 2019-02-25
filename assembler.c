@@ -3,8 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "parser.h"
-#include "dataStructures.h"
 #include "utils.h"
+
+// #include "dataStructures.h" /* TODO - I get this import from utils.h, is this fine? If I use it - error */
+
 
 void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     /* We're supposed to be dealing with a sequence of integers. We'll parse each one 
@@ -33,7 +35,7 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
         i++; /* Skip the comma or space that just made us stop */
 
         dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
-        castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter]);
+        castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
         
         dataTable->dataCounter++;
     }
@@ -53,9 +55,93 @@ void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, pa
     }
 }
 
+/*
+ Receive a register name, and extract the numeric number from it.
+ For example, registerName = "@r3", then the numeric value is 3.
+*/
+int getRegisterValueFromName(char *registerName) {
+    int registerValue;
+
+    // TODO - This is kinda nasty..... any better solution?! Couldn't think of anything
+    // better w/o actually storing the value of the register in the data structure, but
+    // that messes with the previous stuff I did...
+    while (*registerName != 0 && (*registerName == '@' || *registerName == 'r')) {
+        registerName++;
+    }
+    registerValue = atoi(registerName);
+    return registerValue;
+}
+
+void addRegisterValueToBinaryKeyword(char *keyword, int registerValue, int isSrcOperand) {
+    char binaryValue[REGISTER_OPERAND_BINARY_SIZE];
+
+    castIntToBinaryString(registerValue, binaryValue, REGISTER_OPERAND_BINARY_SIZE);
+
+    if (isSrcOperand) { /* Start writing from the beginning of the string (which corresponds to bits 7-11) */
+        memcpy(keyword, binaryValue, REGISTER_OPERAND_BINARY_SIZE);
+    } else { /* Write in the second position (i.e 2-6) */
+        memcpy(keyword + REGISTER_OPERAND_BINARY_SIZE, binaryValue, REGISTER_OPERAND_BINARY_SIZE);
+    }
+
+}
+
+void addEncodingTypeToBinaryKeyword(char *keyword, int encType) {
+    char encTypeBinary[ENCODING_TYPES_MAX_LENGTH];
+    castIntToBinaryString(encType, encTypeBinary, ENCODING_TYPES_MAX_LENGTH);
+    memcpy(keyword + CODE_INSTRUCTION_KEYWORD_DATA_SIZE, encTypeBinary, ENCODING_TYPES_MAX_LENGTH);
+}
+
+void addImmediateValueToBinaryKeyword(char *keyword, int immediateValue) {
+    char binaryVal[CODE_INSTRUCTION_KEYWORD_DATA_SIZE];
+    castIntToBinaryString(immediateValue, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
+    memcpy(keyword, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
+}
+
+void addToCodeTable(codeInstructionsTable *codeTable, parsedRow *pr) {
+    memKeyword *mainKeyWord = (memKeyword*)malloc(sizeof(memKeyword));
+
+    mainKeyWord->opCode = pr->rowMetadata.codeRowMetadata.oc.opCodeNum;
+    mainKeyWord->sourceAddressingMode = pr->rowMetadata.codeRowMetadata.srcOperandType;
+    mainKeyWord->destAddressingMode = pr->rowMetadata.codeRowMetadata.destOperandType;
+    mainKeyWord->encodingType = ABSOLUTE_TYPE;
+
+    codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+    memKeywordToBinaryString(mainKeyWord, codeTable->rows[codeTable->instructionCount]);
+    printf("MKB = '%s'\n", codeTable->rows[codeTable->instructionCount]);
+    codeTable->instructionCount++;
+    
+
+    if (pr->rowMetadata.codeRowMetadata.srcOperandType == NO_OPERAND) {
+        if (pr->rowMetadata.codeRowMetadata.destOperandType == NO_OPERAND) {
+            printf("Code instruction w/o operands\n");
+            return;
+        } else {
+            /* Allocate a new record (ther's only going to be one since only one operand) */
+            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+
+            if (pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE) {
+                addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], 0, 1); /* Add an empty src operand */
+                addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.destOperand), 0); /* Add the dest register  operand */
+                addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+            } else if (pr->rowMetadata.codeRowMetadata.destOperandType == IMMEDIATE_MODE) {
+                addImmediateValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], pr->rowMetadata.codeRowMetadata.destOperand);
+                addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+            }
+            codeTable->instructionCount++;
+
+            
+        }
+    } else { /* Both operands are set, an */
+        if (pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE && pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE) {
+            printf("Both operands are registers, so they fit in the same keyword!\n");
+        }
+    }
+
+}
+
 void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable) {
     FILE *fp;
-    char *path = "./test.as";
+    char *path = "./test_single_ci.as";
     char inputRow[MAX_INSTRUCTION_LENGTH];
     int rowNum = 0;
 
@@ -79,6 +165,8 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
             } else {
                 if (pr->rowType == DATA_DECLARATION) {
                     addToDataTable(symbTable, dataTable, pr);
+                } else if (pr->rowType == CODE_INSTRUCTION) {
+                    addToCodeTable(codeTable, pr);
                 }
             }
 

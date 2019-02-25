@@ -2,7 +2,6 @@
 #include "parser.h"
 #include "assembler.h"
 
-
 int main() {
     symbolTable symbTable;
     dataDefinitionsTables dataTable;
@@ -21,8 +20,7 @@ int main() {
     printf("Symbol table after first iteration - \n");
     printSymbolTable(&symbTable);
 
-    // char s1[MAX_KEYWORD_BINARY_LENGTH];
-    // printf("s1 when starting = %s\n", s1);
-    // intToBinaryString(10, s1);
-    // printf("s1 = %s \n", s1);
+    printf("Code table after first iteration - \n");
+    printCodeTable(&codeTable);
+
 }

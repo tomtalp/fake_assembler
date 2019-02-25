@@ -4,7 +4,11 @@
 #define DATA_DECLARATION_TYPES_COUNT 2
 #define OP_CODES_COUNT 16
 #define MAX_INSTRUCTION_LENGTH 256 /* TODO - IS THIS OK? */
-#define REGISTERS_COUNT 7
+#define REGISTERS_COUNT 8
+#define REGISTER_KEYWORD_LENGTH 3
+#define REGISTER_OPERAND_BINARY_SIZE 5
+#define ENCODING_TYPES_MAX_LENGTH 2
+#define CODE_INSTRUCTION_KEYWORD_DATA_SIZE 10
 
 #define MOV 0
 #define CMP 1
@@ -42,10 +46,21 @@ enum DATA_DEF_TYPES {
     STRING_TYPE
 };
 
-typedef struct dataTypeInfo{
+enum ENCODING_TYPES {
+    ABSOLUTE_TYPE = 0,
+    RELOCATABLE_TYPE = 1,
+    EXTERNAL_TYPE = 2
+};
+
+typedef struct dataTypeInfo {
     char *dataDefName;
     int dataDefCodeNum;
 } dataTypeInfo;
+
+typedef struct registerKeyword {
+    char keyword[REGISTER_KEYWORD_LENGTH];
+    int value;
+} registerKeyword;
 
 // typedef struct opCodeLegalArgs {
 
