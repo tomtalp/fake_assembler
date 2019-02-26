@@ -87,6 +87,10 @@ struct DATA_DECLARATION_ROW_METADATA {
     char rawData[MAX_INSTRUCTION_LENGTH];
 };
 
+struct EXTERN_ENTRY_DECLARATION_ROW_METADATA {
+    char labelName[MAX_SYMBOL_NAME_LENGTH];
+};
+
 typedef struct parsedRow {
     int originalLineNum;
     int isValidRow;
@@ -96,6 +100,8 @@ typedef struct parsedRow {
     union {
         struct CODE_INSTRUCTION_ROW_METADATA codeRowMetadata;
         struct DATA_DECLARATION_ROW_METADATA dataRowMetadata; 
+        struct EXTERN_ENTRY_DECLARATION_ROW_METADATA externRowMetadata;
+        struct EXTERN_ENTRY_DECLARATION_ROW_METADATA entryRowMetadata;
     } rowMetadata;
 } parsedRow;
 

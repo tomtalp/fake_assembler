@@ -337,6 +337,14 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
     } else if (pr->rowType == CODE_INSTRUCTION) {
         printf("So dealing with a code instruction\n");
         getCodeOperands(inputRow, pr);
+    } else if (pr->rowType == EXTERNAL_DECLARATION) {
+        printf("Dealing with external declaration!\n");
+        strcpy(pr->rowMetadata.externRowMetadata.labelName, inputRow);
+    } else if (pr->rowType == ENTRY_DECLARATION) {
+        printf("Dealing with an entry declaration!\n");
+        strcpy(pr->rowMetadata.entryRowMetadata.labelName, inputRow);
+    } else {
+        printf("This should be an error...\n");
     }
 }
 

@@ -20,7 +20,7 @@ void printSymbolTable(symbolTable *tb) {
     }
 }
 
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction) {
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction, int isEntry) {
     symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
 
@@ -29,6 +29,7 @@ void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int
     newNode->memoryAddress = memAddress;
     newNode->isExternal = isExternal;
     newNode->isInstruction = isInstruction;
+    newNode->isEntry = isEntry;
     newNode->next = NULL;
 
     if (tb->symbolsCounter == 0) { /* Handle empty list */

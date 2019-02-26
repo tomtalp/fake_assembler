@@ -8,7 +8,7 @@
 // #include "dataStructures.h" /* TODO - I get this import from utils.h, is this fine? If I use it - error */
 
 
-void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr, int instructionCount) {
     /* We're supposed to be dealing with a sequence of integers. We'll parse each one 
     and cast into an int, and insert into the data table */
 
@@ -18,7 +18,7 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
     i = 0;
 
     if (pr->hasSymbol) {
-        addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, 0, 0);
+        addNodeToSymbolTable(symbTable, pr->symbolName , instructionCount, 0, 0, 0);
     }
 
     for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0; i++) {
@@ -41,17 +41,17 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
     }
 }
 
-void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr, int instructionCount) {
     printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
 
 }
 
-void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr, int instructionCount) {
     printf("Adding stuff to data table!\n");
     if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
-        addDataTypeToDataTable(symbTable, dataTable, pr);
+        addDataTypeToDataTable(symbTable, dataTable, pr, instructionCount);
     } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
-        addStringTypeToDataTable(symbTable, dataTable, pr);
+        addStringTypeToDataTable(symbTable, dataTable, pr, instructionCount);
     }
 }
 
@@ -101,13 +101,17 @@ void addImmediateValueToBinaryKeyword(char *keyword, char *immediateValueStr) {
     memcpy(keyword, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
 }
 
-void addToCodeTable(codeInstructionsTable *codeTable, parsedRow *pr) {
+void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, parsedRow *pr) {
     memKeyword *mainKeyWord = (memKeyword*)malloc(sizeof(memKeyword));
 
     mainKeyWord->opCode = pr->rowMetadata.codeRowMetadata.oc.opCodeNum;
     mainKeyWord->sourceAddressingMode = pr->rowMetadata.codeRowMetadata.srcOperandType;
     mainKeyWord->destAddressingMode = pr->rowMetadata.codeRowMetadata.destOperandType;
     mainKeyWord->encodingType = ABSOLUTE_TYPE;
+
+    if (pr->hasSymbol) {
+        addNodeToSymbolTable(symbTable, pr->symbolName, codeTable->instructionCount, 0, 1, 0);
+    }
 
     codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
     memKeywordToBinaryString(mainKeyWord, codeTable->rows[codeTable->instructionCount]);
@@ -222,9 +226,13 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
                 printf("Row number #%d has errors!\n", pr->originalLineNum);
             } else {
                 if (pr->rowType == DATA_DECLARATION) {
-                    addToDataTable(symbTable, dataTable, pr);
+                    addToDataTable(symbTable, dataTable, pr, codeTable->instructionCount);
                 } else if (pr->rowType == CODE_INSTRUCTION) {
-                    addToCodeTable(codeTable, pr);
+                    addToCodeTable(symbTable, codeTable, pr);
+                } else if (pr->rowType == EXTERNAL_DECLARATION) {
+                    addNodeToSymbolTable(symbTable, pr->rowMetadata.externRowMetadata.labelName, codeTable->instructionCount, 1, 0, 0);
+                } else { /* Entry type */
+                    addNodeToSymbolTable(symbTable, pr->rowMetadata.entryRowMetadata.labelName, codeTable->instructionCount, 0, 0, 1);
                 }
             }
 
