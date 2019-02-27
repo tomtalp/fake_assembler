@@ -8,7 +8,7 @@
 // #include "dataStructures.h" /* TODO - I get this import from utils.h, is this fine? If I use it - error */
 
 
-void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr, int instructionCount) {
+void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     /* We're supposed to be dealing with a sequence of integers. We'll parse each one 
     and cast into an int, and insert into the data table */
 
@@ -18,7 +18,7 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
     i = 0;
 
     if (pr->hasSymbol) {
-        addNodeToSymbolTable(symbTable, pr->symbolName , instructionCount, 0, 0, 0);
+        addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, DATA_SYMBOL);
     }
 
     for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0; i++) {
@@ -41,17 +41,17 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
     }
 }
 
-void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr, int instructionCount) {
+void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
 
 }
 
-void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr, int instructionCount) {
+void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     printf("Adding stuff to data table!\n");
     if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
-        addDataTypeToDataTable(symbTable, dataTable, pr, instructionCount);
+        addDataTypeToDataTable(symbTable, dataTable, pr);
     } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
-        addStringTypeToDataTable(symbTable, dataTable, pr, instructionCount);
+        addStringTypeToDataTable(symbTable, dataTable, pr);
     }
 }
 
@@ -110,7 +110,7 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
     mainKeyWord->encodingType = ABSOLUTE_TYPE;
 
     if (pr->hasSymbol) {
-        addNodeToSymbolTable(symbTable, pr->symbolName, codeTable->instructionCount, 0, 1, 0);
+        addNodeToSymbolTable(symbTable, pr->symbolName, codeTable->instructionCount, INSTRUCTION_SYMBOL);
     }
 
     codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
@@ -141,7 +141,7 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
             }
             codeTable->instructionCount++;
         }
-    } else { /* Both operands are set, an */
+    } else { /* Both operands are set */
         if (pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE && pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE) {
             printf("Two registers!\n");
             codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); /* We'll only need one row, 2 registers fit in 1 kw */
@@ -226,21 +226,32 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
                 printf("Row number #%d has errors!\n", pr->originalLineNum);
             } else {
                 if (pr->rowType == DATA_DECLARATION) {
-                    addToDataTable(symbTable, dataTable, pr, codeTable->instructionCount);
+                    addToDataTable(symbTable, dataTable, pr);
                 } else if (pr->rowType == CODE_INSTRUCTION) {
                     addToCodeTable(symbTable, codeTable, pr);
                 } else if (pr->rowType == EXTERNAL_DECLARATION) {
-                    addNodeToSymbolTable(symbTable, pr->rowMetadata.externRowMetadata.labelName, codeTable->instructionCount, 1, 0, 0);
+                    addNodeToSymbolTable(symbTable, pr->rowMetadata.externRowMetadata.labelName, codeTable->instructionCount, EXTERNAL_SYMBOL);
                 } else { /* Entry type */
-                    addNodeToSymbolTable(symbTable, pr->rowMetadata.entryRowMetadata.labelName, codeTable->instructionCount, 0, 0, 1);
+                    addNodeToSymbolTable(symbTable, pr->rowMetadata.entryRowMetadata.labelName, codeTable->instructionCount, ENTRY_SYMBOL);
                 }
             }
 
         }
         fclose(fp);
     }
+
+    /* Update symbol table with updated IC */
+    updateSymbolTableAddresses(symbTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
 }
 
-void secondIteration() {
+void secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+    int i;
 
+    printf("Starting second iteration!\n");
+
+    parsedRowNode *temp = prList->head;
+
+    for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
+
+    }
 }

@@ -48,8 +48,8 @@ enum DATA_DEF_TYPES {
 
 enum ENCODING_TYPES {
     ABSOLUTE_TYPE = 0,
-    RELOCATABLE_TYPE = 1,
-    EXTERNAL_TYPE = 2
+    EXTERNAL_TYPE = 1,
+    RELOCATABLE_TYPE = 2
 };
 
 typedef struct dataTypeInfo {

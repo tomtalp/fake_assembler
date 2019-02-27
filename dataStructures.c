@@ -20,16 +20,14 @@ void printSymbolTable(symbolTable *tb) {
     }
 }
 
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction, int isEntry) {
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int symbolType) {
     symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
 
     /* Initialize the new node */
     strcpy(newNode->symbolName, symbolName);
     newNode->memoryAddress = memAddress;
-    newNode->isExternal = isExternal;
-    newNode->isInstruction = isInstruction;
-    newNode->isEntry = isEntry;
+    newNode->symbolType = symbolType;
     newNode->next = NULL;
 
     if (tb->symbolsCounter == 0) { /* Handle empty list */
@@ -68,5 +66,18 @@ void printCodeTable(codeInstructionsTable *codeTable) {
     printf("Code Table has %d rows\n", codeTable->instructionCount);
     for (i = 0; i < codeTable->instructionCount; i++) {
         printf("Code table row #%d mem addr = %s\n", i, codeTable->rows[i]);
+    }
+}
+
+void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount) {
+    int i;
+    symbolTableNode *temp = tb->head;
+
+    for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {  
+        if (temp->symbolType == DATA_SYMBOL) {
+            temp->memoryAddress = temp->memoryAddress + baseMemAddress + instructionCount;
+        } else {
+            temp->memoryAddress += baseMemAddress;
+        }
     }
 }

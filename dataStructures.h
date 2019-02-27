@@ -5,6 +5,7 @@
 #define MAX_KEYWORD_BINARY_LENGTH 12
 #define MAX_INSTRUCTIONS 1024
 #define MAX_SYMBOL_NAME_LENGTH 31
+#define BASE_MEM_ADDRESS 100
 
 /* Representation of a keyword in INT's */ 
 typedef struct memKeyword {
@@ -33,12 +34,17 @@ typedef struct dataDefinitionsTables {
     char *rows[MAX_INSTRUCTIONS];
 } dataDefinitionsTables;
 
+enum SYMBOL_TYPES {
+    DATA_SYMBOL,
+    INSTRUCTION_SYMBOL,
+    EXTERNAL_SYMBOL,
+    ENTRY_SYMBOL
+};
+
 typedef struct symbolTableNode {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memoryAddress;
-    int isExternal;
-    int isInstruction; /* Is the symbol pointing to a code instruction statement? */
-    int isEntry; 
+    enum SYMBOL_TYPES symbolType;
     struct symbolTableNode *next;
 } symbolTableNode;
 
@@ -49,6 +55,7 @@ typedef struct symbolTable {
 
 void initSymbolTable(symbolTable *symbTable);
 void printSymbolTable(symbolTable *tb);
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int isExternal, int isInstruction, int isEntry);
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int symbolType);
 void printDataTable(dataDefinitionsTables *dataTable);
 void printCodeTable(codeInstructionsTable *codeTable);
+void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);

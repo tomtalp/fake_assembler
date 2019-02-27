@@ -380,8 +380,8 @@ void addParsedRowToList(parsedRowList *prList, parsedRow *pr) {
 
 void printParsedRowsList(parsedRowList *prList) {
     int i;
-
-    parsedRowNode *temp = prList->head;
+    parsedRowNode *temp = (parsedRowNode*)malloc(sizeof(parsedRowNode)); /* TODO - Do I need this? or can I just do parsedRowNode *temp = prList->head */
+    temp = prList->head;
 
     printf("Parsed Rows list has has %d rows\n", prList->parsedRowsCounter);
     for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
