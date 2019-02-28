@@ -310,6 +310,25 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
 
 }
 
+void addStringRawData(parsedRow *pr, char *rawData) {
+    char strippedData[MAX_INSTRUCTION_LENGTH];
+    int i;
+
+    i = 0;
+
+    while (*rawData != '\0' && *rawData != '\n') {
+        printf("Hello, looking at %c\n", *rawData);
+        if (*rawData != '"') {
+            strippedData[i] = *rawData;
+            i++;
+        }
+        rawData++;
+    }
+
+    printf("String after stripping = '%s'\n", strippedData);
+    strcpy(pr->rowMetadata.dataRowMetadata.rawData, strippedData);
+}
+
 void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 
     printf("1. Parsing '%s' from row number #%d\n", inputRow, rowNum);
@@ -333,7 +352,11 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 
     if (pr->rowType == DATA_DECLARATION) {
         printf("So we're dealing with a data decl, lets get the data!\n");
-        strcpy(pr->rowMetadata.dataRowMetadata.rawData, inputRow);
+        if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
+            addStringRawData(pr, inputRow);
+        } else {
+            strcpy(pr->rowMetadata.dataRowMetadata.rawData, inputRow);
+        }
     } else if (pr->rowType == CODE_INSTRUCTION) {
         printf("So dealing with a code instruction\n");
         getCodeOperands(inputRow, pr);

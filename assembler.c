@@ -13,13 +13,9 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
     and cast into an int, and insert into the data table */
 
     int num, i;
-    char intAsBinaryString[MAX_KEYWORD_BINARY_LENGTH];
+    char intAsBinaryString[MAX_KEYWORD_BINARY_LENGTH]; // TODO for Itay - Why don't I need \0 at the end of this one?
 
     i = 0;
-
-    if (pr->hasSymbol) {
-        addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, DATA_SYMBOL);
-    }
 
     for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0; i++) {
         num = 0;
@@ -43,11 +39,35 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
 
 void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
+    int num, i;
+    char intAsBinaryString[MAX_KEYWORD_BINARY_LENGTH];
 
+    i = 0;
+    int asciiVal;
+
+    while (pr->rowMetadata.dataRowMetadata.rawData[i] != 0) {
+        asciiVal = (int)pr->rowMetadata.dataRowMetadata.rawData[i];
+        dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+        castIntToBinaryString(asciiVal, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
+        
+        dataTable->dataCounter++;
+        i++;
+    }
+
+    /* Add a null terminator at the end*/
+    dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+    castIntToBinaryString(0, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
+    
+    dataTable->dataCounter++;
 }
 
 void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     printf("Adding stuff to data table!\n");
+    
+    if (pr->hasSymbol) {
+        addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, DATA_SYMBOL);
+    }
+
     if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
         addDataTypeToDataTable(symbTable, dataTable, pr);
     } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
