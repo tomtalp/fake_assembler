@@ -4,27 +4,11 @@
 #include <ctype.h>
 #include "parser.h"
 #include "utils.h"
-
-// char *reservedKeywords[RESERVED_KEYWORDS_COUNT] = {
-//     "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-//     "mov", "cmp", "add", "sub", "not", "clr", "lea",
-//     "inc", "dec", "jmp", "bne", "red", "prn", "jsr",
-//     "rts", "stop", "entry", "extern", "string", "data"
-// };
+// #include "errors.h"
 
 char *LEGAL_REGISTERS[REGISTERS_COUNT] = {
     "@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"
 };
-
-// registerKeyword LEGAL_REGISTERS[REGISTERS_COUNT] = {
-//     {"@r1", 1},
-//     {"@r2", 2},
-//     {"@r3", 3},
-//     {"@r4", 4},
-//     {"@r5", 5},
-//     {"@r6", 6},
-//     {"@r7", 7}
-// };
 
 dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".data", DATA_TYPE},
@@ -90,7 +74,6 @@ void printParsedRow(parsedRow *pr) {
     }
 
     printf("\n");
-    
 }
 
 
@@ -122,6 +105,22 @@ void getSymbolName(char *inputRow, char *symbolName) {
     *inputRow = '\0';
 }
 
+void validateSymbolName(parsedRow *pr) {
+    char *temp = pr->symbolName;
+    if (!isalpha(*(pr->symbolName))) {
+        pr->errorType = SYMBOL_STARTS_WITH_NON_ALPHA;
+        return;
+    }
+    
+    while (*temp != '\0') {
+        if (!isalnum(*temp)) {
+            pr->errorType = SYMBOL_CONTAINS_INVALID_CHAR;
+            return;
+        }
+        temp++;
+    }
+}
+
 int getDataDefType(char *dataDef) {
     if (strcmp(dataDef, ".string") == 0) {
         return STRING_TYPE;
@@ -143,7 +142,7 @@ void getRowType(char *inputRow, parsedRow *pr) {
         firstKeyword[i++] = *inputRowStart;
         inputRowStart++;
     }
-    firstKeyword[i] = '\0'; // Terminate the first keyword
+    firstKeyword[i] = '\0'; /* Terminate the first keyword */
 
     /* Remove the first keyword from inputRow */
     while (*inputRowStart != 0) {
@@ -155,16 +154,26 @@ void getRowType(char *inputRow, parsedRow *pr) {
 
     printf("Initial detected keyword = '%s'\n", firstKeyword);
 
-    // What row type do we have?!
-    for (i = 0; i < DATA_DECLARATION_TYPES_COUNT; i++) {
-        if (strcmp(firstKeyword, LEGAL_DATA_DECLARATIONS[i].dataDefName) == 0) {
-            pr->rowType = DATA_DECLARATION;
-            detectedRowType = 1;
-            printf("Detected DATA DEFINITION\n");
-            pr->rowMetadata.dataRowMetadata.type = LEGAL_DATA_DECLARATIONS[i].dataDefCodeNum;
-            break;
+    /* Detect the row type - data decaration, code instruction, extern or entry */
+
+    if (firstKeyword[0] == '.') { /* Expecting a data declaration */ 
+        for (i = 0; i < DATA_DECLARATION_TYPES_COUNT; i++) {
+            if (strcmp(firstKeyword, LEGAL_DATA_DECLARATIONS[i].dataDefName) == 0) {
+                pr->rowType = DATA_DECLARATION;
+                detectedRowType = 1;
+                pr->rowMetadata.dataRowMetadata.type = LEGAL_DATA_DECLARATIONS[i].dataDefCodeNum;
+                break;
+            }
         }
+
+        if (!detectedRowType) { /* Data declaration is of an undefined type*/
+            strcpy(pr->rowMetadata.dataRowMetadata.rawData, firstKeyword); /* Stick the faulty data definition in the raw data so we can print it later*/
+            pr->errorType = INVALID_DATA_DEF_TYPE;
+            return;
+        }
+
     }
+    
 
     if (!detectedRowType) {
         if (strcmp(firstKeyword, ".extern") == 0) {
@@ -189,12 +198,14 @@ void getRowType(char *inputRow, parsedRow *pr) {
                 break;
             }
         }
-        
+
     }    
 
-    if (!detectedRowType) {
-        pr->isValidRow = 0;
-        printf("Undefined row type\n");
+    if (!detectedRowType) { /* Undetected row up to here means invalid operation code*/
+        /* Put the fauly op code in the parsed row object so we can print it later*/
+        pr->rowMetadata.codeRowMetadata.oc.opCodeName = (char *)malloc(MAX_RESERVED_KEYWORD_SIZE * sizeof(char));
+        strcpy(pr->rowMetadata.codeRowMetadata.oc.opCodeName, firstKeyword);
+        pr->errorType = INVALID_OPCODE_ERROR;
     }
 }
 
@@ -329,11 +340,12 @@ void addStringRawData(parsedRow *pr, char *rawData) {
     strcpy(pr->rowMetadata.dataRowMetadata.rawData, strippedData);
 }
 
+
 void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 
     printf("1. Parsing '%s' from row number #%d\n", inputRow, rowNum);
     pr->originalLineNum = rowNum;
-    pr->isValidRow = 1; // Assume valid row until proving otherwise
+    pr->errorType = NO_ERROR; // Assume valid row until proven otherwise
     trimLeadingWhitespace(inputRow);
 
     printf("2. After initial whitespace trimming - '%s'\n", inputRow);
@@ -341,12 +353,22 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
     pr->hasSymbol = isSymbolDefinition(inputRow);
     if (pr->hasSymbol) {
         getSymbolName(inputRow, pr->symbolName);
+        validateSymbolName(pr);
         trimLeadingWhitespace(inputRow);
+
+        if (pr->errorType != NO_ERROR) {
+            return;
+        }
     }
 
     printf("3. Left with '%s' after checking symbol\n", inputRow);
 
     getRowType(inputRow, pr);
+    if (pr->errorType != NO_ERROR) {
+        return;
+    }
+    
+    
     trimLeadingWhitespace(inputRow);
     printf("4. After getting row type, we're left with - '%s'\n", inputRow);
 

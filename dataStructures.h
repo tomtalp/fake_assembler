@@ -1,3 +1,6 @@
+#ifndef DATA_STRUCTS_H
+#define DATA_STRUCTS_H
+
 #define KEYWORD_ENCODING_TYPE_BITS 2
 #define KEYWORD_ADDRESSING_MODE_BITS 3
 #define KEYWORD_OP_CODE_BITS 4
@@ -74,3 +77,5 @@ void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instruc
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress);
 void printRelocTable(relocationTable *relocTable);
 int fetchFromSymbTableByName(symbolTable *symbTable, char *symbolName);
+
+#endif

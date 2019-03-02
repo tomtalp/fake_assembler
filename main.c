@@ -29,12 +29,15 @@
 //     printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s'\n", keyword, firstKeyWordSlice, secondKeyWordSlice);
 // }
 
+
+
 int main() {
     // keywordToBase64("123456789123");
     parsedRowList rowsList;
     symbolTable symbTable;
     dataDefinitionsTables dataTable;
     codeInstructionsTable codeTable;
+    int errorFlag;
 
     initSymbolTable(&symbTable);
     initParsedRowList(&rowsList);
@@ -42,26 +45,30 @@ int main() {
     printf("Data table before first iteration - \n");
     printDataTable(&dataTable);
 
-    firstIteration(&symbTable, &dataTable, &codeTable, &rowsList);
+    errorFlag = firstIteration(&symbTable, &dataTable, &codeTable, &rowsList);
+    if (errorFlag) {
+        printf("FAILED!!!\n");
+    } else {
+        printf("WOOHOO\n");
+    }
+    // printf("Data table after first iteration - \n");
+    // printDataTable(&dataTable);
 
-    printf("Data table after first iteration - \n");
-    printDataTable(&dataTable);
+    // printf("Symbol table after first iteration - \n");
+    // printSymbolTable(&symbTable);
 
-    printf("Symbol table after first iteration - \n");
-    printSymbolTable(&symbTable);
+    // printf("Code table after first iteration - \n");
+    // printCodeTable(&codeTable);
 
-    printf("Code table after first iteration - \n");
-    printCodeTable(&codeTable);
+    // printf("######################################\n");
+    // printParsedRowsList(&rowsList);
 
-    printf("######################################\n");
-    printParsedRowsList(&rowsList);
+    // printf("######################################\n");
+    // printf("RELOC TABLE - \n");
+    // printRelocTable(symbTable.relocTable);
 
-    printf("######################################\n");
-    printf("RELOC TABLE - \n");
-    printRelocTable(symbTable.relocTable);
-
-    secondIteration(&symbTable, &dataTable, &codeTable, &rowsList);
-    printf("Code table after first iteration - \n");
-    printCodeTable(&codeTable);
+    // secondIteration(&symbTable, &dataTable, &codeTable, &rowsList);
+    // printf("Code table after first iteration - \n");
+    // printCodeTable(&codeTable);
 
 }

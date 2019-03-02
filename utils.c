@@ -2,9 +2,13 @@
 #include <ctype.h>
 #include "utils.h"
 #include "stdlib.h"
-// #include "dataStructures.h"
 
-
+// char base64Constants[] = { 
+//     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+//     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
+//     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
+//     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
+//     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
 /*
     Trim all leading whitespaces in the received source string. This function modifies the original string!
 
@@ -42,7 +46,7 @@ void castIntToBinaryString(int n, char *binaryStr, int sizeOfBinaryKeyword) {
         binaryStr++;
         mask >>= 1;
     }
-    // *(binaryStr) = '\0';
+    *(binaryStr) = '\0'; // TODO itay - do I need this?
 }
 
 int isEmptyRow(char *inputRow) {
@@ -86,3 +90,35 @@ void memKeywordToBinaryString(memKeyword *mem, char *binaryStr) {
     printf("mem->encodingType = %d\n", mem->encodingType);
     binaryStr = binaryStr + KEYWORD_ENCODING_TYPE_BITS;
 }
+
+// void keywordToBase64(char *keyword, char *base64Keyword) {
+//     int i;
+//     char firstKeyWordSlice[MAX_KEYWORD_BINARY_LENGTH/2];
+//     char secondKeyWordSlice[MAX_KEYWORD_BINARY_LENGTH/2];
+
+//     for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH; i++) {
+//         if (i < MAX_KEYWORD_BINARY_LENGTH/2) {
+//             firstKeyWordSlice[i] = keyword[i];
+//         } else {
+//             secondKeyWordSlice[i - MAX_KEYWORD_BINARY_LENGTH/2] = keyword[i];
+//         }
+//     }
+
+//     printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s'\n", keyword, firstKeyWordSlice, secondKeyWordSlice);
+// }
+
+// void dumpCode(codeInstructionsTable *codeTable, char *outputFileName) {
+//     int i;
+//     char keywordInBaste64[2];
+//     FILE *fp;
+
+//     fp = fopen("./ps.ob", "w");
+
+//     for (i = 0; i < codeTable->instructionCount; i++) {
+//         keywordToBase64(codeTable->rows[i], keywordInBaste64);
+//         fprintf(fp, keywordInBaste64);
+//         // printf("Code table row #%d mem addr = %s\n", i, codeTable->rows[i]);
+//     }    
+
+//     fclose(fp);
+// }

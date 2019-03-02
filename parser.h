@@ -1,3 +1,8 @@
+#ifndef PARSER_H
+#define PARSER_H
+
+#include "errors.h"
+
 #define MAX_SYMBOL_NAME_LENGTH 31
 #define MAX_RESERVED_KEYWORD_SIZE 7
 #define RESERVED_KEYWORDS_COUNT 27
@@ -92,8 +97,9 @@ struct EXTERN_ENTRY_DECLARATION_ROW_METADATA {
 };
 
 typedef struct parsedRow {
+    char fileName[FILENAME_MAX];
     int originalLineNum;
-    int isValidRow;
+    ERROR_TYPES errorType;
     int hasSymbol;
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     enum ROW_TYPES rowType;
@@ -129,3 +135,6 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum);
 void initParsedRowList(parsedRowList *prList);
 void addParsedRowToList(parsedRowList *prList, parsedRow *pr);
 void printParsedRowsList(parsedRowList *prList);
+void printParserError(parsedRow *pr);
+
+#endif

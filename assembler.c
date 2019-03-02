@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "parser.h"
 #include "utils.h"
+#include "errors.h"
 
 // #include "dataStructures.h" /* TODO - I get this import from utils.h, is this fine? If I use it - error */
 
@@ -220,11 +221,11 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
 
 }
 
-void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+int firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     FILE *fp;
-    // char *path = "./test_single_ci.as";
     char *path = "./test.as";
     char inputRow[MAX_INSTRUCTION_LENGTH];
+    int generalErrorFlag = 0;
     int rowNum = 0;
 
     fp = fopen(path, "r");
@@ -239,12 +240,14 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
             }
             printf("Got row '%s'\n", inputRow);
             parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
+            strcpy(pr->fileName, path);
             parseRow(inputRow, pr, rowNum);
             addParsedRowToList(prList, pr);
             printf("Done parsing row %d\n", rowNum);
 
-            if (!pr->isValidRow) {
-                printf("Row number #%d has errors!\n", pr->originalLineNum);
+            if (pr->errorType != 0) {
+                printParserError(pr);
+                generalErrorFlag = 1;
             } else {
                 if (pr->rowType == DATA_DECLARATION) {
                     addToDataTable(symbTable, dataTable, pr);
@@ -263,7 +266,8 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
 
     /* Update symbol table with updated IC */
     updateSymbolTableAddresses(symbTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
-    // updateDataTableAddress(dataTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
+
+    return generalErrorFlag;
 }
 
 void secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
