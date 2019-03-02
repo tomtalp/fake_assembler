@@ -13,7 +13,6 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
     and cast into an int, and insert into the data table */
 
     int num, i;
-    char intAsBinaryString[MAX_KEYWORD_BINARY_LENGTH]; // TODO for Itay - Why don't I need \0 at the end of this one?
 
     i = 0;
 
@@ -40,7 +39,6 @@ void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataT
 void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
     printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
     int num, i;
-    char intAsBinaryString[MAX_KEYWORD_BINARY_LENGTH];
 
     i = 0;
     int asciiVal;
@@ -133,7 +131,7 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
         addNodeToSymbolTable(symbTable, pr->symbolName, codeTable->instructionCount, INSTRUCTION_SYMBOL);
     }
 
-    codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+    codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
     memKeywordToBinaryString(mainKeyWord, codeTable->rows[codeTable->instructionCount]);
     printf("MKB = '%s'\n", codeTable->rows[codeTable->instructionCount]);
     codeTable->instructionCount++;
@@ -145,7 +143,7 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
             return;
         } else {
             /* Allocate a new record (ther's only going to be one since only one operand) */
-            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+            codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
 
             if (pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE) {
                 addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], 0, 1); /* Add an empty src operand */
@@ -158,20 +156,21 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
             } else { // Direct mode 
                 printf("Direct mode\n");
                 memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
+                addToRelocationsTable(symbTable->relocTable, pr->rowMetadata.codeRowMetadata.destOperand, codeTable->instructionCount);
             }
             codeTable->instructionCount++;
         }
     } else { /* Both operands are set */
         if (pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE && pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE) {
             printf("Two registers!\n");
-            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); /* We'll only need one row, 2 registers fit in 1 kw */
+            codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char)); /* We'll only need one row, 2 registers fit in 1 kw */
             addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.srcOperand), 1); 
             addRegisterValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], getRegisterValueFromName(pr->rowMetadata.codeRowMetadata.destOperand), 0);
             addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
 
             codeTable->instructionCount++;
         } else {
-            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); 
+            codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char)); 
     
             /* Add source */
             switch ( pr->rowMetadata.codeRowMetadata.srcOperandType)
@@ -188,12 +187,13 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
 
                 case DIRECT_MODE:
                     memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
+                    addToRelocationsTable(symbTable->relocTable, pr->rowMetadata.codeRowMetadata.srcOperand, codeTable->instructionCount);
                 default:
                     break;
             }
 
             codeTable->instructionCount++;
-            codeTable->rows[codeTable->instructionCount] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char)); 
+            codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char)); 
 
             /* Add dest */
             switch ( pr->rowMetadata.codeRowMetadata.destOperandType)
@@ -210,6 +210,7 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
 
                 case DIRECT_MODE:
                     memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
+                    addToRelocationsTable(symbTable->relocTable, pr->rowMetadata.codeRowMetadata.destOperand, codeTable->instructionCount);
                 default:
                     break;
             }    
@@ -262,16 +263,38 @@ void firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
 
     /* Update symbol table with updated IC */
     updateSymbolTableAddresses(symbTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
+    // updateDataTableAddress(dataTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
 }
 
 void secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
-    int i;
+    int i, relocMemAddressFromSymbTable;
+    relocationTableNode *temp = symbTable->relocTable->head;
 
     printf("Starting second iteration!\n");
 
-    parsedRowNode *temp = prList->head;
+    // parsedRowNode *temp = prList->head;
 
-    for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
+    // for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
 
+    // }
+
+    for (i = 0; i < dataTable->dataCounter; i++) {
+        printf("adding to IC = %d \n", codeTable->instructionCount+1);
+        codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
+        memcpy(codeTable->rows[codeTable->instructionCount], dataTable->rows[i], MAX_KEYWORD_BINARY_LENGTH);
+        *(codeTable->rows[codeTable->instructionCount] + MAX_KEYWORD_BINARY_LENGTH) = '\0'; // TODO WHAT....
+        codeTable->instructionCount++;
     }
+
+    for(i = 0; i < symbTable->relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
+        printf("Working on %s (%d) \n", temp->symbolName, temp->memAddress);
+        relocMemAddressFromSymbTable = fetchFromSymbTableByName(symbTable, temp->symbolName);
+        if (relocMemAddressFromSymbTable == -1 ) {
+            printf("Error! Symbol %s doesn't exist\n", temp->symbolName);
+        } else {
+            castIntToBinaryString(relocMemAddressFromSymbTable, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
+            addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], RELOCATABLE_TYPE);
+        }
+    }
+
 }

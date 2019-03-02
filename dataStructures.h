@@ -41,6 +41,17 @@ enum SYMBOL_TYPES {
     ENTRY_SYMBOL
 };
 
+typedef struct relocationTableNode {
+    char symbolName[MAX_SYMBOL_NAME_LENGTH];
+    int memAddress;
+    struct relocationTableNode *next;
+} relocationTableNode;
+
+typedef struct relocationTable {
+    relocationTableNode *head;
+    int relocationVariablesCounter;
+} relocationTable;
+
 typedef struct symbolTableNode {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memoryAddress;
@@ -51,6 +62,7 @@ typedef struct symbolTableNode {
 typedef struct symbolTable {
     symbolTableNode *head;
     int symbolsCounter;
+    relocationTable *relocTable;
 } symbolTable;
 
 void initSymbolTable(symbolTable *symbTable);
@@ -59,3 +71,6 @@ void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int
 void printDataTable(dataDefinitionsTables *dataTable);
 void printCodeTable(codeInstructionsTable *codeTable);
 void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);
+void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress);
+void printRelocTable(relocationTable *relocTable);
+int fetchFromSymbTableByName(symbolTable *symbTable, char *symbolName);
