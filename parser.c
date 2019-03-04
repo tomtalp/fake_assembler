@@ -378,84 +378,121 @@ void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
     @param *rawData - String containing the expected data declaration
 
 */
-void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
-    int isNumberFlag = 0;
-    int whiteSpaceFlag = 0;
-    int commaFlag = 0;
-    
-    while (*rawData != '\0' && *rawData != '\n') {
-        if (*rawData == ',') { /* Encountered a comma, we turn of the isNumberFlag */
-            if (!isNumberFlag) {
-                pr->errorType = ILLEGAL_COMMA_IN_DATA_DECLARATION;
-                return;
-            }
-            /* handle flags = forget the numbers & commas and remember we saw a comma */
-            isNumberFlag = 0;
-            whiteSpaceFlag = 0;
-            commaFlag = 1;
-        } else if (isspace(*rawData)) {
-            whiteSpaceFlag = 1;
-        }
-        else {
-            if (isdigit(*rawData)) {
-                if (whiteSpaceFlag && isNumberFlag) {
-                    pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
-                    return;
-                } else {
-                    isNumberFlag = 1;
-                    commaFlag = 0;
-                }
-            } else {
-                pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
-                return;
-            }
-        }
-        rawData++;
-    }
-
-    if (commaFlag) {
-        pr->errorType = ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA;
-        return;
-    }
-
-}
 // void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
-//     int legalNumFlag = 0;
+//     int isNumberFlag = 0;
+//     int whiteSpaceFlag = 0;
+//     int commaFlag = 0;
 //     int positivitySignFlag = 0;
-//     int legalNumAfterComma = 0;
-
+    
 //     while (*rawData != '\0' && *rawData != '\n') {
-//         if (isspace(*rawData)) { /* A space is only legal after we detected a valid number, and before a comma */
-
-//         } else if (*rawData == ',') { /* Encountered a comma, so the legalNumFlag needs to be true */
-//             if (!legalNumFlag) {
+//         if (*rawData == ',') { /* Encountered a comma, we turn of the isNumberFlag */
+//             if (!isNumberFlag) {
 //                 pr->errorType = ILLEGAL_COMMA_IN_DATA_DECLARATION;
 //                 return;
 //             }
-//             /* Reset flag */
-//             legalNumFlag = 0;
+//             /* handle flags = forget the numbers & commas and remember we saw a comma */
+//             isNumberFlag = 0;
+//             whiteSpaceFlag = 0;
 //             positivitySignFlag = 0;
-//         } else {
+//             commaFlag = 1;
+
+//         } else if (isspace(*rawData)) {
+//             whiteSpaceFlag = 1;
+//         }
+//         else {
 //             if (*rawData == '-'  || *rawData == '+' ) {
-//                 if (positivitySignFlag) { /* Already encountered a positivity sign */
+//                 if (positivitySignFlag || (whiteSpaceFlag && isNumberFlag)) { /* Already encountered a positivity sign, or space after sign */
 //                     pr->errorType = ILLEGAL_POSITIVITY_SIGN_IN_DATA_DECLARATION;
 //                     return;
 //                 } else {
 //                     positivitySignFlag = 1;
 //                 }
-//             } else {
-//                 if (isdigit(*rawData)) {
-//                     legalNumFlag = 1;
-//                 } else {
+//             } else if (isdigit(*rawData)) {
+//                 if (whiteSpaceFlag && isNumberFlag) {
+//                     printf("wattt - '%c'\n", *rawData);
 //                     pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
 //                     return;
+//                 } else {
+//                     isNumberFlag = 1;
+//                     commaFlag = 0;
+//                     whiteSpaceFlag = 0;
 //                 }
+//             } else {
+                
+//                 pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
+//                 return;
 //             }
 //         }
-
-//     rawData++;
+//         rawData++;
 //     }
+
+//     if (commaFlag) {
+//         pr->errorType = ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA;
+//         return;
+//     }
+
 // }
+void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
+    int isNumberFlag = 0;
+    int whiteSpaceFlag = 0;
+    int commaFlag = 0;
+    int positivitySignFlag = 0;
+    printf("Started with '%s'\n", rawData);
+
+    if (*rawData == '\0') {
+        pr->errorType = ILLEGAL_DATA_DECLARATION_EMPTY_DATA;
+        return;
+    } else if (*rawData == ',') {
+        pr->errorType = ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA;
+        return;
+    } else if (!isdigit(*rawData) && !(*rawData == '-'  || *rawData == '+' )) {
+        pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
+        return;
+    }
+
+    rawData++;
+
+    // while (*(rawData+1) != '\0' && *(rawData+1) != '\n') {
+    while (*rawData != '\0' && *rawData != '\n') {
+        printf("Working on '%c'\n", *rawData);
+        if (*rawData == ',') {
+            printf("hai\n");
+            if (commaFlag || (!isspace(*(rawData-1)) && !isdigit(*(rawData-1)))) { /* Check if consecutive commas, or if neighbours aren't a digit or a space*/
+                printf("Failed here 1 ('%c')\n", *rawData);
+                pr->errorType = ILLEGAL_COMMA_IN_DATA_DECLARATION;
+                return;
+            }
+            commaFlag = 1;
+            isNumberFlag = 0;
+            positivitySignFlag = 0;
+        } else if ((*rawData == '-'  || *rawData == '+' )) {
+            if (isdigit(*(rawData-1)) || !isdigit(*(rawData+1)) || positivitySignFlag) { /* After a sign we must see a number, and we can't have multiple signs for a number*/
+                printf("Failed here 2 ('%c')\n", *rawData);
+                pr->errorType = ILLEGAL_POSITIVITY_SIGN_IN_DATA_DECLARATION;
+                return;
+            }
+            positivitySignFlag = 1;
+        } else if (isdigit(*rawData)) {
+            commaFlag = 0;
+        } else if (isspace(*rawData)) {
+            if (isdigit(*(rawData-1)) && isdigit(*(rawData+1))) {
+                pr->errorType = ILLEGAL_DATA_DECLARATION_EXTRANEOUS_SPACE;
+                return;
+            }
+        } else {
+            printf("Failed here 3 ('%c')\n", *rawData);
+            pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
+            return;
+        }
+        rawData++;
+    }
+
+    if (commaFlag || *rawData == ',') {
+        printf("Failed in last check\n");
+        pr->errorType = ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA;
+        return;
+    }
+}
 
 void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 

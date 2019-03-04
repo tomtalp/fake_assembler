@@ -33,13 +33,19 @@ void printParserError(parsedRow *pr) {
             printf(BOLD_WHITE_PRINT "Detected illegal comma in data declaration - must include numbers separated by a single comma\n");
             break;
         case ILLEGAL_POSITIVITY_SIGN_IN_DATA_DECLARATION:
-            printf(BOLD_WHITE_PRINT "Illegal sign for number - each number can only have one '+' or '-' sign!\n");
+            printf(BOLD_WHITE_PRINT "Illegal sign for number - each number can only have one '+' or '-' sign, followed by a number!\n");
             break;
         case ILLEGAL_DATA_DECLARATION_CHARACTER:
             printf(BOLD_WHITE_PRINT "Illegal character for number - can only contain numeric characters, separated by a comma!\n");
             break;
         case ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA:
-            printf(BOLD_WHITE_PRINT "Data declaration can't end with a comma! (a comma always has to preceed a number)\n");
+            printf(BOLD_WHITE_PRINT "Data declaration can't start or end with a comma! (a comma always has to between numbers)\n");
+            break;
+        case ILLEGAL_DATA_DECLARATION_EXTRANEOUS_SPACE:
+            printf(BOLD_WHITE_PRINT "Extraneous whitespace between numbers!\n");
+            break;    
+        case ILLEGAL_DATA_DECLARATION_EMPTY_DATA:
+            printf(BOLD_WHITE_PRINT "Data declaration can't be empty!\n");
             break;
         default:
             printf("Something else\n");
