@@ -8,12 +8,13 @@
 #define RESERVED_KEYWORDS_COUNT 27
 #define DATA_DECLARATION_TYPES_COUNT 2
 #define OP_CODES_COUNT 16
-#define MAX_INSTRUCTION_LENGTH 256 /* TODO - IS THIS OK? */
+#define MAX_INSTRUCTION_LENGTH 80 /* TODO - IS THIS OK? */
 #define REGISTERS_COUNT 8
 #define REGISTER_KEYWORD_LENGTH 3
 #define REGISTER_OPERAND_BINARY_SIZE 5
 #define ENCODING_TYPES_MAX_LENGTH 2
 #define CODE_INSTRUCTION_KEYWORD_DATA_SIZE 10
+#define FILENAME_MAX_LENGTH 80
 
 #define MOV 0
 #define CMP 1
@@ -97,7 +98,7 @@ struct EXTERN_ENTRY_DECLARATION_ROW_METADATA {
 };
 
 typedef struct parsedRow {
-    char fileName[FILENAME_MAX];
+    char fileName[FILENAME_MAX_LENGTH];
     int originalLineNum;
     ERROR_TYPES errorType;
     int hasSymbol;
@@ -136,5 +137,5 @@ void initParsedRowList(parsedRowList *prList);
 void addParsedRowToList(parsedRowList *prList, parsedRow *pr);
 void printParsedRowsList(parsedRowList *prList);
 void printParserError(parsedRow *pr);
-
+void validateIntDataDeclaration(parsedRow *pr, char *rawData);
 #endif
