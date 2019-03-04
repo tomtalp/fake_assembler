@@ -22,7 +22,25 @@ void printParserError(parsedRow *pr) {
             printf(BOLD_WHITE_PRINT "Label contains illegal characters (can't contain spaces or non-alphanumeric). Received '%s'\n",
                         pr->symbolName);
             break;
+        case DATA_STRING_DECLARATION_MISSING_QUOTES:
+            printf(BOLD_WHITE_PRINT "String data declarations must be wrapped in quotes!\n");
+            break;
+        case EXTRANEOUS_TEXT_AFTER_STRING_QUOTES:
+            printf(BOLD_WHITE_PRINT "Extraneous text after quotes\n");
+            break;
 
+        case ILLEGAL_COMMA_IN_DATA_DECLARATION:
+            printf(BOLD_WHITE_PRINT "Detected illegal comma in data declaration - must include numbers separated by a single comma\n");
+            break;
+        case ILLEGAL_POSITIVITY_SIGN_IN_DATA_DECLARATION:
+            printf(BOLD_WHITE_PRINT "Illegal sign for number - each number can only have one '+' or '-' sign!\n");
+            break;
+        case ILLEGAL_DATA_DECLARATION_CHARACTER:
+            printf(BOLD_WHITE_PRINT "Illegal character for number - can only contain numeric characters, separated by a comma!\n");
+            break;
+        case ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA:
+            printf(BOLD_WHITE_PRINT "Data declaration can't end with a comma! (a comma always has to preceed a number)\n");
+            break;
         default:
             printf("Something else\n");
             break;

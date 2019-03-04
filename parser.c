@@ -156,7 +156,7 @@ void getRowType(char *inputRow, parsedRow *pr) {
 
     /* Detect the row type - data decaration, code instruction, extern or entry */
 
-    if (firstKeyword[0] == '.') { /* Expecting a data declaration */ 
+    if (firstKeyword[0] == '.') { /* Expecting a data declaration, or extern/entry */ 
         for (i = 0; i < DATA_DECLARATION_TYPES_COUNT; i++) {
             if (strcmp(firstKeyword, LEGAL_DATA_DECLARATIONS[i].dataDefName) == 0) {
                 pr->rowType = DATA_DECLARATION;
@@ -166,24 +166,20 @@ void getRowType(char *inputRow, parsedRow *pr) {
             }
         }
 
-        if (!detectedRowType) { /* Data declaration is of an undefined type*/
-            strcpy(pr->rowMetadata.dataRowMetadata.rawData, firstKeyword); /* Stick the faulty data definition in the raw data so we can print it later*/
+        if (!detectedRowType) { /* Not a data declaration, but perhaps extern/entry  */
+            if (strcmp(firstKeyword, ".extern") == 0) {
+                pr->rowType = EXTERNAL_DECLARATION;
+                detectedRowType = 1;
+                printf("Detected EXTERNAL DECLARATION\n");
+            } else if (strcmp(firstKeyword, ".entry") == 0) {
+                pr->rowType = ENTRY_DECLARATION;
+                detectedRowType = 1;
+                printf("Detected ENTRY DECLARATION\n");
+            } else {
+                strcpy(pr->rowMetadata.dataRowMetadata.rawData, firstKeyword); /* Stick the faulty data definition in the raw data so we can print it later*/
             pr->errorType = INVALID_DATA_DEF_TYPE;
             return;
-        }
-
-    }
-    
-
-    if (!detectedRowType) {
-        if (strcmp(firstKeyword, ".extern") == 0) {
-            pr->rowType = EXTERNAL_DECLARATION;
-            detectedRowType = 1;
-            printf("Detected EXTERNAL DECLARATION\n");
-        } else if (strcmp(firstKeyword, ".entry") == 0) {
-            pr->rowType = ENTRY_DECLARATION;
-            detectedRowType = 1;
-            printf("Detected ENTRY DECLARATION\n");
+            }
         }
     }
 
@@ -328,7 +324,6 @@ void addStringRawData(parsedRow *pr, char *rawData) {
     i = 0;
 
     while (*rawData != '\0' && *rawData != '\n') {
-        printf("Hello, looking at %c\n", *rawData);
         if (*rawData != '"') {
             strippedData[i] = *rawData;
             i++;
@@ -340,6 +335,127 @@ void addStringRawData(parsedRow *pr, char *rawData) {
     strcpy(pr->rowMetadata.dataRowMetadata.rawData, strippedData);
 }
 
+/* 
+    Receive a string that's supposed to contain the data declaration, and make sure the string is valid.
+    We check that the string is wrapped in " ", and doesn't have any text after " "
+
+    @param *parsedRow - Parsed Row object pointer
+    @param *rawData - String containing the expected data declaration
+
+*/
+void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
+    int hasClosingQuotes = 0;
+
+    if (*rawData != '"') { /* String declaration must start with a quote */
+        pr->errorType = DATA_STRING_DECLARATION_MISSING_QUOTES;
+        return;
+    }
+    rawData++;
+
+    while (*rawData != '\0' && *rawData != '\n') {
+        if (hasClosingQuotes && !isspace(*rawData)) { /* If we already detected closing quotes, we're not supposed to see additional text*/
+            pr->errorType = EXTRANEOUS_TEXT_AFTER_STRING_QUOTES;
+            return;
+        }
+
+        if (*rawData == '"') {
+            hasClosingQuotes = 1;
+        }
+        rawData++;
+    }
+
+    if (!hasClosingQuotes) {
+        pr->errorType = DATA_STRING_DECLARATION_MISSING_QUOTES;
+        return;
+    }
+}
+
+/* 
+    Receive a string that's supposed to represent an int data declaration, and make sure the string is valid.
+    We check that the numbers are separated by commas, and that there are no illegal characters
+
+    @param *parsedRow - Parsed Row object pointer
+    @param *rawData - String containing the expected data declaration
+
+*/
+void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
+    int isNumberFlag = 0;
+    int whiteSpaceFlag = 0;
+    int commaFlag = 0;
+    
+    while (*rawData != '\0' && *rawData != '\n') {
+        if (*rawData == ',') { /* Encountered a comma, we turn of the isNumberFlag */
+            if (!isNumberFlag) {
+                pr->errorType = ILLEGAL_COMMA_IN_DATA_DECLARATION;
+                return;
+            }
+            /* handle flags = forget the numbers & commas and remember we saw a comma */
+            isNumberFlag = 0;
+            whiteSpaceFlag = 0;
+            commaFlag = 1;
+        } else if (isspace(*rawData)) {
+            whiteSpaceFlag = 1;
+        }
+        else {
+            if (isdigit(*rawData)) {
+                if (whiteSpaceFlag && isNumberFlag) {
+                    pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
+                    return;
+                } else {
+                    isNumberFlag = 1;
+                    commaFlag = 0;
+                }
+            } else {
+                pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
+                return;
+            }
+        }
+        rawData++;
+    }
+
+    if (commaFlag) {
+        pr->errorType = ILLEGAL_DATA_DECLARATION_EXTRANEOUS_COMMA;
+        return;
+    }
+
+}
+// void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
+//     int legalNumFlag = 0;
+//     int positivitySignFlag = 0;
+//     int legalNumAfterComma = 0;
+
+//     while (*rawData != '\0' && *rawData != '\n') {
+//         if (isspace(*rawData)) { /* A space is only legal after we detected a valid number, and before a comma */
+
+//         } else if (*rawData == ',') { /* Encountered a comma, so the legalNumFlag needs to be true */
+//             if (!legalNumFlag) {
+//                 pr->errorType = ILLEGAL_COMMA_IN_DATA_DECLARATION;
+//                 return;
+//             }
+//             /* Reset flag */
+//             legalNumFlag = 0;
+//             positivitySignFlag = 0;
+//         } else {
+//             if (*rawData == '-'  || *rawData == '+' ) {
+//                 if (positivitySignFlag) { /* Already encountered a positivity sign */
+//                     pr->errorType = ILLEGAL_POSITIVITY_SIGN_IN_DATA_DECLARATION;
+//                     return;
+//                 } else {
+//                     positivitySignFlag = 1;
+//                 }
+//             } else {
+//                 if (isdigit(*rawData)) {
+//                     legalNumFlag = 1;
+//                 } else {
+//                     pr->errorType = ILLEGAL_DATA_DECLARATION_CHARACTER;
+//                     return;
+//                 }
+//             }
+//         }
+
+//     rawData++;
+//     }
+// }
 
 void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 
@@ -375,10 +491,21 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
     if (pr->rowType == DATA_DECLARATION) {
         printf("So we're dealing with a data decl, lets get the data!\n");
         if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
+            validateStringDataDeclaration(pr, inputRow);
+
+            if (pr->errorType != NO_ERROR) {
+                return;
+            }
+
             addStringRawData(pr, inputRow);
         } else {
+            validateIntDataDeclaration(pr, inputRow);
+            if (pr->errorType != NO_ERROR) {
+                return;
+            }
             strcpy(pr->rowMetadata.dataRowMetadata.rawData, inputRow);
         }
+
     } else if (pr->rowType == CODE_INSTRUCTION) {
         printf("So dealing with a code instruction\n");
         getCodeOperands(inputRow, pr);
