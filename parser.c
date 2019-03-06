@@ -16,31 +16,29 @@ dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".string", STRING_TYPE}
 };
 
-int foo(char *s1, int n1) {
-    printf("Inside a foo validator! s1 = %s, n1 = %d\n", s1, n1);
-}
+    // NO_OPERAND = 0,
+    // IMMEDIATE_MODE = 1,
+    // DIRECT_MODE = 3,
+    // REGISTER_MODE = 5
 
-int bar(char *s1, int n1) {
-    printf("And this is a bar validator! s1 = %s, n1 = %d\n", s1, n1);
-}
 
 opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
-    {"mov", MOV, foo},
-    {"cmp", CMP, foo},
-    {"add", ADD, foo},
-    {"sub", SUB, foo},
-    {"not", NOT, foo},
-    {"clr", CLR, foo},
-    {"lea", LEA, foo},
-    {"inc", INC, foo},
-    {"dec", DEC, foo},
-    {"jmp", JMP, foo},
-    {"bne", BNE, foo},
-    {"red", RED, foo},
-    {"prn", PRN, foo},
-    {"jsr", JSR, foo},
-    {"rts", RTS, foo},
-    {"stop", STOP, bar}
+    {"mov", MOV},
+    {"cmp", CMP},
+    {"add", ADD},
+    {"sub", SUB},
+    {"not", NOT},
+    {"clr", CLR},
+    {"lea", LEA},
+    {"inc", INC},
+    {"dec", DEC},
+    {"jmp", JMP},
+    {"bne", BNE},
+    {"red", RED},
+    {"prn", PRN},
+    {"jsr", JSR},
+    {"rts", RTS},
+    {"stop", STOP}
 };
 
 void printParsedRow(parsedRow *pr) {
@@ -346,6 +344,7 @@ void addStringRawData(parsedRow *pr, char *rawData) {
 */
 void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
     int hasClosingQuotes = 0;
+    int isEmptyString = 1;
 
     if (*rawData != '"') { /* String declaration must start with a quote */
         pr->errorType = DATA_STRING_DECLARATION_MISSING_QUOTES;
@@ -361,12 +360,19 @@ void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
 
         if (*rawData == '"') {
             hasClosingQuotes = 1;
+        } else {
+            isEmptyString = 0;
         }
         rawData++;
     }
 
     if (!hasClosingQuotes) {
         pr->errorType = DATA_STRING_DECLARATION_MISSING_QUOTES;
+        return;
+    }
+
+    if (isEmptyString) {
+        pr->errorType = ILLEGAL_DATA_DECLARATION_EMPTY_DATA;
         return;
     }
 }
@@ -433,6 +439,47 @@ void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
     }
 }
 
+/* 
+    Check that a parsedRow object has valid code operands, for their corresponding op code
+
+    @param *parsedRow - Parsed Row object pointer
+*/
+void validateCodeOperands(parsedRow *pr) {
+    int isValid;
+    int opCodeNum = pr->rowMetadata.codeRowMetadata.oc.opCodeNum;
+
+    if (opCodeNum == MOV || opCodeNum == ADD || opCodeNum == SUB) {
+        isValid = (pr->rowMetadata.codeRowMetadata.srcOperandType == IMMEDIATE_MODE || pr->rowMetadata.codeRowMetadata.srcOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE)
+                    &&
+                (pr->rowMetadata.codeRowMetadata.destOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE);
+    } else if (opCodeNum == CMP) {
+        isValid = (pr->rowMetadata.codeRowMetadata.srcOperandType == IMMEDIATE_MODE || pr->rowMetadata.codeRowMetadata.srcOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.srcOperandType == REGISTER_MODE)
+                    &&
+                (pr->rowMetadata.codeRowMetadata.destOperandType == IMMEDIATE_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE);
+    } else if (opCodeNum == NOT || opCodeNum == CLR || opCodeNum == INC || opCodeNum == DEC 
+                || opCodeNum == JMP || opCodeNum == BNE || opCodeNum == RED || opCodeNum == JSR) {
+        isValid = (pr->rowMetadata.codeRowMetadata.srcOperandType == NO_OPERAND)
+                    &&
+                (pr->rowMetadata.codeRowMetadata.destOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE);
+    } else if (opCodeNum == LEA) {
+        isValid = (pr->rowMetadata.codeRowMetadata.srcOperandType == DIRECT_MODE)
+                    &&
+                (pr->rowMetadata.codeRowMetadata.destOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE);
+    } else if (opCodeNum == PRN) {
+        isValid = (pr->rowMetadata.codeRowMetadata.srcOperandType == NO_OPERAND)
+                    &&
+                (pr->rowMetadata.codeRowMetadata.destOperandType == IMMEDIATE_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == DIRECT_MODE || pr->rowMetadata.codeRowMetadata.destOperandType == REGISTER_MODE);
+    } else {
+        isValid = (pr->rowMetadata.codeRowMetadata.srcOperandType == NO_OPERAND)
+                    &&
+                (pr->rowMetadata.codeRowMetadata.destOperandType == NO_OPERAND);
+    }
+
+    if (!isValid) {
+        pr->errorType = ILLEGAL_CODE_OPERANDS;
+    }
+}
+
 void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 
     printf("1. Parsing '%s' from row number #%d\n", inputRow, rowNum);
@@ -465,7 +512,6 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
     printf("4. After getting row type, we're left with - '%s'\n", inputRow);
 
     if (pr->rowType == DATA_DECLARATION) {
-        printf("So we're dealing with a data decl, lets get the data!\n");
         if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
             validateStringDataDeclaration(pr, inputRow);
 
@@ -485,6 +531,12 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
     } else if (pr->rowType == CODE_INSTRUCTION) {
         printf("So dealing with a code instruction\n");
         getCodeOperands(inputRow, pr);
+
+        validateCodeOperands(pr);
+        if (pr->errorType != NO_ERROR) {
+                return;
+        }
+
     } else if (pr->rowType == EXTERNAL_DECLARATION) {
         printf("Dealing with external declaration!\n");
         strcpy(pr->rowMetadata.externRowMetadata.labelName, inputRow);

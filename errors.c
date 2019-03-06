@@ -47,6 +47,9 @@ void printParserError(parsedRow *pr) {
         case ILLEGAL_DATA_DECLARATION_EMPTY_DATA:
             printf(BOLD_WHITE_PRINT "Data declaration can't be empty!\n");
             break;
+        case ILLEGAL_CODE_OPERANDS:
+            printf(BOLD_WHITE_PRINT "Operation code '%s' received illegal arguments!\n", pr->rowMetadata.codeRowMetadata.oc.opCodeName);
+            break;
         default:
             printf("Something else\n");
             break;

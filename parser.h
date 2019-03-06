@@ -72,12 +72,9 @@ typedef struct registerKeyword {
 
 // };
 
-typedef int (*opCodeValidator)(char *, int);
-
 typedef struct opCode {
     char *opCodeName;
     int opCodeNum;
-    opCodeValidator validator;
 } opCode;
 
 struct CODE_INSTRUCTION_ROW_METADATA {
@@ -138,4 +135,7 @@ void addParsedRowToList(parsedRowList *prList, parsedRow *pr);
 void printParsedRowsList(parsedRowList *prList);
 void printParserError(parsedRow *pr);
 void validateIntDataDeclaration(parsedRow *pr, char *rawData);
+void validateStringDataDeclaration(parsedRow *pr, char *rawData);
+void validateSymbolName(parsedRow *pr);
+
 #endif
