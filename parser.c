@@ -227,6 +227,13 @@ int operandIsNumber(char *operand) {
     return 1;
 }
 
+/*
+    Evaluate the type of the two operands from the command
+
+    @param parsedRow *pr - A pointer to the parsedRow object, which we'll use to set the operand types
+    @param char *firstOperand - The first operand we extracted from the command
+    @param char *secondOperand - The second operand we extracted from the command
+*/
 void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand) {
     if (*secondOperand == '\0' && *firstOperand == '\0') {
         pr->rowMetadata.codeRowMetadata.srcOperandType = NO_OPERAND;
@@ -277,7 +284,6 @@ void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand) {
 
 */
 void getCodeOperands(char *inputRow, parsedRow *pr) {
-    printf("RECEIVED '%s'\n", inputRow);
     int i;
     int detectedComma = 0;
     int detectedTextAfterComma = 0;
@@ -295,9 +301,9 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
     }
     
     firstOperand[i] = '\0';
-    printf("firstOperand = '%s'\n", firstOperand);
+
     trimLeadingWhitespace(inputRowStart);
-    printf("wat\n");
+
     if (*inputRowStart == ',') {
         detectedComma = 1;
         inputRowStart++;
@@ -308,9 +314,7 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
     
     trimLeadingWhitespace(inputRowStart);
 
-    printf("LEFT WITH - '%s'\n", inputRowStart);
-
-    /* Locate the second operand, if it exists the command */
+    /* Locate the second operand, if it exists in the command */
     i = 0;
     while (*inputRowStart != 0 && !isspace(*inputRowStart)) {
         if (*inputRowStart == ',' && detectedComma) {
@@ -322,12 +326,24 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
         i++;
         inputRowStart++;
     }
+
     secondOperand[i] = '\0';  /* Terminate the second operand */
 
     if (detectedComma && !detectedTextAfterComma) {
         pr->errorType = NO_TEXT_AFTER_COMMA;
         return;
     }
+
+    trimLeadingWhitespace(inputRowStart);
+
+    if (*inputRowStart != '\0') { /* If the string isn't finished after we trimmed whitespaces, then there's extra text after the 2nd operand*/
+        pr->errorType = EXTRANEOS_TEXT_AFTER_OPERANDS;
+        return;
+    }
+
+    
+
+    
 
     /* Remove the operands from inputRow */
     while (*inputRowStart != 0) {
@@ -354,7 +370,6 @@ void addStringRawData(parsedRow *pr, char *rawData) {
         rawData++;
     }
 
-    printf("String after stripping = '%s'\n", strippedData);
     strcpy(pr->rowMetadata.dataRowMetadata.rawData, strippedData);
 }
 

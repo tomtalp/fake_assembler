@@ -68,10 +68,6 @@ typedef struct registerKeyword {
     int value;
 } registerKeyword;
 
-// typedef struct opCodeLegalArgs {
-
-// };
-
 typedef struct opCode {
     char *opCodeName;
     int opCodeNum;
