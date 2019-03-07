@@ -221,17 +221,21 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
 
 }
 
-int firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     FILE *fp;
-    char *path = "./test.as";
+
+    char fileNameWithExtension[FILENAME_MAX_LENGTH];
     char inputRow[MAX_INSTRUCTION_LENGTH];
     int generalErrorFlag = 0;
     int rowNum = 0;
 
-    fp = fopen(path, "r");
+    getFileNameWithExtension(fileName, fileNameWithExtension);
+
+    fp = fopen(fileNameWithExtension, "r");
 
     if (fp == NULL) {
-        printf("Failed opening file '%s'\n", path);
+        printFailedOpeningFile(fileNameWithExtension);
+        return 1;
     } else {
         while(fgets(inputRow, MAX_INSTRUCTION_LENGTH, fp) != NULL) {
             rowNum++;
@@ -240,7 +244,7 @@ int firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, cod
             }
             printf("Got row '%s'\n", inputRow);
             parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
-            strcpy(pr->fileName, path);
+            strcpy(pr->fileName, fileName);
             parseRow(inputRow, pr, rowNum);
             addParsedRowToList(prList, pr);
             printf("Done parsing row %d\n", rowNum);
@@ -270,7 +274,7 @@ int firstIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, cod
     return generalErrorFlag;
 }
 
-void secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     int i, relocMemAddressFromSymbTable;
     relocationTableNode *temp = symbTable->relocTable->head;
 
@@ -300,5 +304,7 @@ void secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, c
             addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], RELOCATABLE_TYPE);
         }
     }
+
+    return 0;
 
 }

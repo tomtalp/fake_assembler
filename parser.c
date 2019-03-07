@@ -520,7 +520,6 @@ void validateCodeOperands(parsedRow *pr) {
 }
 
 void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
-
     printf("1. Parsing '%s' from row number #%d\n", inputRow, rowNum);
     pr->originalLineNum = rowNum;
     pr->errorType = NO_ERROR; // Assume valid row until proven otherwise

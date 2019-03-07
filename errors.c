@@ -1,5 +1,24 @@
 #include <stdio.h>
-#include "parser.h"
+#include "errors.h"
+
+void printMissingFilesError() {
+    printf(BOLD_RED_PRINT "Error - ");
+    printf(RESET_PRINT);
+    printf(BOLD_WHITE_PRINT " no files past as an argument!\n");
+    printf(RESET_PRINT);
+}
+
+void printGeneralFileError(char *fileName) {
+    printf(BOLD_RED_PRINT "Failed parsing '%s'\n", fileName);
+    printf(RESET_PRINT);
+}
+
+void printFailedOpeningFile(char *fileName) {
+    printf(BOLD_RED_PRINT "'%s' - ", fileName);
+    printf(RESET_PRINT);
+    printf(BOLD_WHITE_PRINT " file doesn't exist!\n");
+    printf(RESET_PRINT);
+}
 
 void printParserError(parsedRow *pr) {
     printf(BOLD_RED_PRINT "Error %s:%d - ", pr->fileName, pr->originalLineNum);
@@ -58,6 +77,9 @@ void printParserError(parsedRow *pr) {
             break;
         case NO_TEXT_AFTER_COMMA:
             printf(BOLD_WHITE_PRINT "Missing text after comma - expecting a second argument\n");
+            break;
+        case EXTRANEOS_TEXT_AFTER_OPERANDS:
+            printf(BOLD_WHITE_PRINT "Extraneous text after second operand\n");
             break;
         default:
             printf("Something else\n");

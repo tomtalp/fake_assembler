@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "parser.h"
 #include "assembler.h"
+#include "errors.h"
+#include "utils.h"
 
 // #define MAX_KEYWORD_BINARY_LENGTH 12
 
@@ -29,28 +31,50 @@
 //     printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s'\n", keyword, firstKeyWordSlice, secondKeyWordSlice);
 // }
 
+int run(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *rowsList) {
+    int errorFlag;
+    errorFlag = firstIteration(fileName, symbTable, dataTable, codeTable, rowsList);
+
+    if (errorFlag) {
+        return 1;
+    }
+
+    errorFlag = secondIteration(fileName, symbTable, dataTable, codeTable, rowsList);;
+
+    return errorFlag;
+}
 
 
-int main() {
-    // keywordToBase64("123456789123");
+int main(int argc, char *argv[]) {
     parsedRowList rowsList;
     symbolTable symbTable;
     dataDefinitionsTables dataTable;
     codeInstructionsTable codeTable;
     int errorFlag;
 
-    initSymbolTable(&symbTable);
-    initParsedRowList(&rowsList);
-
-    printf("Data table before first iteration - \n");
-    printDataTable(&dataTable);
-
-    errorFlag = firstIteration(&symbTable, &dataTable, &codeTable, &rowsList);
-    if (errorFlag) {
-        printf("FAILED!!!\n");
-    } else {
-        printf("WOOHOO\n");
+    if (argc == 1) {
+        printMissingFilesError();
+        return 1;
     }
+
+    for (int i=1; i < argc; i++) {
+        printf("Woring on '%s'\n", argv[i]);
+        initSymbolTable(&symbTable);
+        initParsedRowList(&rowsList);
+
+        run(argv[i], &symbTable, &dataTable, &codeTable, &rowsList);
+        if (errorFlag) {
+            printGeneralFileError(argv[i]);
+            continue;
+        }
+    }
+    
+
+    
+
+    // printf("Data table before first iteration - \n");
+    // printDataTable(&dataTable);
+
     // printf("Data table after first iteration - \n");
     // printDataTable(&dataTable);
 

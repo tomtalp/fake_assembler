@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "utils.h"
-#include "stdlib.h"
+#include <stdlib.h>
+#include <string.h>
 
 // char base64Constants[] = { 
 //     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
@@ -89,6 +90,11 @@ void memKeywordToBinaryString(memKeyword *mem, char *binaryStr) {
     castIntToBinaryString(mem->encodingType, binaryStr, KEYWORD_ENCODING_TYPE_BITS);
     printf("mem->encodingType = %d\n", mem->encodingType);
     binaryStr = binaryStr + KEYWORD_ENCODING_TYPE_BITS;
+}
+
+void getFileNameWithExtension(char *fileName, char *fileNameWithExtension) {
+    strcpy(fileNameWithExtension, fileName);
+    strcat(fileNameWithExtension, ASSEMBLER_FILE_EXTENSION);
 }
 
 // void keywordToBase64(char *keyword, char *base64Keyword) {
