@@ -269,9 +269,18 @@ void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand) {
     }
 }
 
+/*
+    Receive the raw input row after extracting the operation code, and get the operands
+
+    @param *parsedRow - Parsed Row object pointer
+    @param char *inputRow - The string representing the operation arguments
+
+*/
 void getCodeOperands(char *inputRow, parsedRow *pr) {
-    printf("Inside getCodeOperands, extracting operands from '%s'\n", inputRow);
+    printf("RECEIVED '%s'\n", inputRow);
     int i;
+    int detectedComma = 0;
+    int detectedTextAfterComma = 0;
     char *inputRowStart = inputRow;
     char firstOperand[MAX_SYMBOL_NAME_LENGTH];
     char secondOperand[MAX_SYMBOL_NAME_LENGTH];
@@ -279,31 +288,47 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
 
     /* Locate the first operand in the command */
     i = 0;
-    while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
+    while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRowStart != ',') {
         firstOperand[i] = *inputRowStart;
         i++;
         inputRowStart++;
     }
     
-    /* Terminate the first operand and get rid of the trailing ',' or ' ' if we picked one */
-    if (firstOperand[i-1] == ',' || isspace(firstOperand[i-1])) {
-        firstOperand[i-1] = '\0'; 
-    } else {
-        firstOperand[i] = '\0'; 
-    }
-    printf("Done with first operand extraction = '%s'!\n", firstOperand);
+    firstOperand[i] = '\0';
+    printf("firstOperand = '%s'\n", firstOperand);
     trimLeadingWhitespace(inputRowStart);
-    printf("Trimmed input row\n");
+    printf("wat\n");
+    if (*inputRowStart == ',') {
+        detectedComma = 1;
+        inputRowStart++;
+    } else if (*inputRowStart != '\0') {
+        pr->errorType = MISSING_COMMA_BETWEEN_OPERANDS;
+        return;
+    }
+    
+    trimLeadingWhitespace(inputRowStart);
+
+    printf("LEFT WITH - '%s'\n", inputRowStart);
+
     /* Locate the second operand, if it exists the command */
     i = 0;
-    while (*inputRowStart != 0 && !isspace(*inputRowStart) && *inputRow != ',') {
+    while (*inputRowStart != 0 && !isspace(*inputRowStart)) {
+        if (*inputRowStart == ',' && detectedComma) {
+            pr->errorType = MULTIPLE_COMMAS_BETWEEN_OPERANDS;
+            return;
+        }
+        detectedTextAfterComma = 1;
         secondOperand[i] = *inputRowStart;
         i++;
         inputRowStart++;
     }
     secondOperand[i] = '\0';  /* Terminate the second operand */
-    printf("Done with second operand extraction = '%s'!\n", secondOperand);
-    printf("Finished extracting operands! first = '%s', second = '%s'\n", firstOperand, secondOperand);
+
+    if (detectedComma && !detectedTextAfterComma) {
+        pr->errorType = NO_TEXT_AFTER_COMMA;
+        return;
+    }
+
     /* Remove the operands from inputRow */
     while (*inputRowStart != 0) {
         *inputRow = *inputRowStart;
@@ -313,7 +338,6 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
     *inputRow = '\0';
 
     getOperandTypes(pr, firstOperand, secondOperand);
-
 }
 
 void addStringRawData(parsedRow *pr, char *rawData) {
@@ -532,6 +556,11 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
         printf("So dealing with a code instruction\n");
         getCodeOperands(inputRow, pr);
 
+        if (pr->errorType != NO_ERROR) {
+                return;
+        }
+
+        printf("srcOperand = '%s', destOperand = '%s'\n", pr->rowMetadata.codeRowMetadata.srcOperand, pr->rowMetadata.codeRowMetadata.destOperand);
         validateCodeOperands(pr);
         if (pr->errorType != NO_ERROR) {
                 return;

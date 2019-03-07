@@ -50,6 +50,15 @@ void printParserError(parsedRow *pr) {
         case ILLEGAL_CODE_OPERANDS:
             printf(BOLD_WHITE_PRINT "Operation code '%s' received illegal arguments!\n", pr->rowMetadata.codeRowMetadata.oc.opCodeName);
             break;
+        case MISSING_COMMA_BETWEEN_OPERANDS:
+            printf(BOLD_WHITE_PRINT "Operands must be separated between a comma!\n");
+            break;
+        case MULTIPLE_COMMAS_BETWEEN_OPERANDS:
+            printf(BOLD_WHITE_PRINT "Detected more than one comma. Operations can have up to 2 arguments, separated by at most 1 comma\n");
+            break;
+        case NO_TEXT_AFTER_COMMA:
+            printf(BOLD_WHITE_PRINT "Missing text after comma - expecting a second argument\n");
+            break;
         default:
             printf("Something else\n");
             break;
