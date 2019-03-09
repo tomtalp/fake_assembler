@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dataStructures.h"
+#include "utils.h"
 
 void initSymbolTable(symbolTable *symbTable) {
-    printf("inside initSymbolTable\n");
     symbTable->head = NULL;
     symbTable->symbolsCounter = 0;
 
@@ -58,6 +58,42 @@ void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enu
     tb->symbolsCounter += 1;    
 }
 
+/*
+    Add a new node to our data table
+
+    @param dataDefinitionsTable *tb - A pointer to the data table we're working with
+    @param int num - The numeric value we want to encode as binary and add to the data table
+*/
+void addNodeToDataTable(dataDefinitionsTable *tb, int num) {
+    dataDefinitionNode *newNode = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
+    dataDefinitionNode *temp = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
+
+    /* Initialize the new node */
+    // strcpy(newNode->binaryData, binaryData);
+    castIntToBinaryString(num, newNode->binaryData, MAX_KEYWORD_BINARY_LENGTH);
+    newNode->next = NULL;
+
+    if (tb->dataCounter == 0) { /* Handle empty list */
+        tb->head = newNode;
+        tb->dataCounter += 1;
+        return;
+    }
+
+    temp = tb->head;
+
+    while (temp->next) { /* Go to end of list */
+        temp = temp->next;
+    }
+
+    temp->next = newNode;
+    tb->dataCounter += 1;    
+}
+
+void initDataTable(dataDefinitionsTable *dataTable) {
+    dataTable->head = NULL;
+    dataTable->dataCounter = 0;
+}
+
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress) {
     relocationTableNode *newNode = (relocationTableNode*)malloc(sizeof(relocationTableNode));
     relocationTableNode *temp = (relocationTableNode*)malloc(sizeof(relocationTableNode));
@@ -87,18 +123,17 @@ void printRelocTable(relocationTable *relocTable) {
     relocationTableNode *temp = relocTable->head;
 
     printf("reloc Table has %d rows\n", relocTable->relocationVariablesCounter);
-    // for(i = 1; temp ; temp = temp->next, i++)  {   
     for(i = 0; i < relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
         printf("reloc table row #%d = name = %s, addr = %d\n", i+1, temp->symbolName, temp->memAddress);
     }
 }
 
-void printDataTable(dataDefinitionsTables *dataTable) {
-    int i;
+void printDataTable(dataDefinitionsTable *dataTable) {
+    dataDefinitionNode *temp = dataTable->head;
 
-    printf("Data Table has %d rows\n", dataTable->dataCounter);
-    for (i = 0; i < dataTable->dataCounter; i++) {
-        printf("Data table row #%d mem addr = %s\n", i, dataTable->rows[i]);
+    while (temp != NULL) {
+        printf("Data table - '%s'\n", temp->binaryData);
+        temp = temp->next;
     }
 }
 

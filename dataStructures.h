@@ -61,10 +61,21 @@ typedef struct codeInstructionsTable {
 
 /* The data definition section - contains the data counter (DC) and an array of data value
 encoded in binary*/
-typedef struct dataDefinitionsTables {
+
+// typedef struct dataDefinitionsTables {
+//     int dataCounter;
+//     char *rows[MAX_INSTRUCTIONS];
+// } dataDefinitionsTables;
+
+typedef struct dataDefinitionNode {
+    char binaryData[MAX_KEYWORD_BINARY_LENGTH+1];
+    struct dataDefinitionNode *next;
+} dataDefinitionNode;
+
+typedef struct dataDefinitionsTable {
+    dataDefinitionNode *head;
     int dataCounter;
-    char *rows[MAX_INSTRUCTIONS];
-} dataDefinitionsTables;
+} dataDefinitionsTable;
 
 enum SYMBOL_TYPES {
     DATA_SYMBOL,
@@ -209,11 +220,13 @@ typedef struct parsedRowList {
 void initSymbolTable(symbolTable *symbTable);
 void printSymbolTable(symbolTable *tb);
 void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType);
-void printDataTable(dataDefinitionsTables *dataTable);
+void initDataTable(dataDefinitionsTable *dataTable);
+void addNodeToDataTable(dataDefinitionsTable *tb, int num);
+void printDataTable(dataDefinitionsTable *dataTable);
 void printCodeTable(codeInstructionsTable *codeTable);
 void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress);
 void printRelocTable(relocationTable *relocTable);
-// int fetchFromSymbTableByName(symbolTable *symbTable, char *symbolName);
 symbolTableNode *fetchFromSymbTableByName(symbolTable *tb, char *symbolName);
+
 #endif

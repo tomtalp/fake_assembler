@@ -31,7 +31,7 @@
 //     printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s'\n", keyword, firstKeyWordSlice, secondKeyWordSlice);
 // }
 
-int run(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *rowsList) {
+int run(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *rowsList) {
     int errorFlag;
     errorFlag = firstIteration(fileName, symbTable, dataTable, codeTable, rowsList);
 
@@ -39,29 +39,25 @@ int run(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable
         return 1;
     }
 
-    printf("Data table before first iteration - \n");
-    printDataTable(dataTable);
-
     printf("Data table after first iteration - \n");
     printDataTable(dataTable);
 
-    printf("Symbol table after first iteration - \n");
-    printSymbolTable(symbTable);
+    // printf("Symbol table after first iteration - \n");
+    // printSymbolTable(symbTable);
 
-    printf("Code table after first iteration - \n");
-    printCodeTable(codeTable);
+    // printf("Code table after first iteration - \n");
+    // printCodeTable(codeTable);
 
-    printf("######################################\n");
-    printParsedRowsList(rowsList);
+    // printf("######################################\n");
+    // printParsedRowsList(rowsList);
 
-    printf("######################################\n");
-    printf("RELOC TABLE - \n");
-    printRelocTable(symbTable->relocTable);
+    // printf("######################################\n");
+    // printf("RELOC TABLE - \n");
+    // printRelocTable(symbTable->relocTable);
 
-    errorFlag = secondIteration(symbTable, dataTable, codeTable, rowsList);
-
-    printf("Code table after second iteration - \n");
-    printCodeTable(codeTable);
+    errorFlag = secondIteration(fileName, symbTable, dataTable, codeTable, rowsList);
+    // printf("Code table after second iteration - \n");
+    // printCodeTable(codeTable);
 
     return errorFlag;
 }
@@ -71,7 +67,7 @@ int main(int argc, char *argv[]) {
     int i;
     parsedRowList rowsList;
     symbolTable symbTable;
-    dataDefinitionsTables dataTable;
+    dataDefinitionsTable dataTable;
     codeInstructionsTable codeTable;
     int errorFlag;
 
@@ -84,8 +80,9 @@ int main(int argc, char *argv[]) {
         printf("Woring on '%s'\n", argv[i]);
         initSymbolTable(&symbTable);
         initParsedRowList(&rowsList);
+        initDataTable(&dataTable);
 
-        run(argv[i], &symbTable, &dataTable, &codeTable, &rowsList);
+        errorFlag = run(argv[i], &symbTable, &dataTable, &codeTable, &rowsList);
 
         if (errorFlag) {
             printGeneralFileError(argv[i]);

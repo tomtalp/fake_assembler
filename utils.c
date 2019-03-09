@@ -166,9 +166,6 @@ void binaryKeywordToBase64(char *keyword, char *base64Keyword) {
     base64Keyword[0] = base64Constants[firstKeyWordNum];
     base64Keyword[1] = base64Constants[secondKeyWordNum];
     base64Keyword[2] = '\0';
-    // printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s' \n", keyword, firstKeyWordSlice, secondKeyWordSlice);
-    printf("%s\n", base64Keyword);
-    // printf("#######################################\n");
 }
 
 /*

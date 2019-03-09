@@ -11,10 +11,10 @@
     This runs after the validateIntDataDeclaration() func, so we know our data is valid and can be
     legally parsed.
 
-    @param dataDefinitionsTables *dataTable - The data definitions binary table, used to add the parsed numbers in binary
+    @param dataDefinitionsTable *dataTable - The data definitions binary table, used to add the parsed numbers in binary
     @param parsedRow *pr - The row we're working with, containing the data to be parsed
 */
-void addDataTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addDataTypeToDataTable(dataDefinitionsTable *dataTable, parsedRow *pr) {
     /* We're supposed to be dealing with a sequence of integers. We'll parse each one 
     and cast into an int, and insert into the data table */
     
@@ -22,7 +22,7 @@ void addDataTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
     int isNegative = 0;
 
     i = 0;
-    printf("rawData = '%s'\n", pr->rowMetadata.dataRowMetadata.rawData);
+
     /* Iterate over the entire raw string. Each for-loop iteration is considered a new number parsing */
     for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0;) {
         num = 0;
@@ -37,9 +37,7 @@ void addDataTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
                 i++;
                 continue;
             }
-            printf("num = %d\n", num);
             num = num * 10;
-            printf("Char = '%c', Digit = '%d'\n", pr->rowMetadata.dataRowMetadata.rawData[i], pr->rowMetadata.dataRowMetadata.rawData[i] - '0');
             num += pr->rowMetadata.dataRowMetadata.rawData[i] - '0'; /* Add the character digit as an int */
             i++;
         }
@@ -48,21 +46,20 @@ void addDataTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
             num = num * (-1);
         }
 
-        printf("Detected num = '%d'\n", num);
-        dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
-        castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
+        // dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+        // castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
+        addNodeToDataTable(dataTable, num);
         
-        dataTable->dataCounter++;
+        // dataTable->dataCounter++;
 
         /* Get to the next number, if exists, while skipping all spaces or comas */
         while (pr->rowMetadata.dataRowMetadata.rawData[i] != 0 && (isspace(pr->rowMetadata.dataRowMetadata.rawData[i]) || pr->rowMetadata.dataRowMetadata.rawData[i] == ',')) { 
-            printf("Skipping '%c'\n", pr->rowMetadata.dataRowMetadata.rawData[i]);
             i++;
         }
     }
 }
 
-void addStringTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addStringTypeToDataTable(dataDefinitionsTable *dataTable, parsedRow *pr) {
     printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
     int num, i;
 
@@ -71,21 +68,23 @@ void addStringTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
 
     while (pr->rowMetadata.dataRowMetadata.rawData[i] != 0) {
         asciiVal = (int)pr->rowMetadata.dataRowMetadata.rawData[i];
-        dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
-        castIntToBinaryString(asciiVal, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
+        addNodeToDataTable(dataTable, asciiVal);
+        // dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+        // castIntToBinaryString(asciiVal, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
         
-        dataTable->dataCounter++;
+        // dataTable->dataCounter++;
         i++;
     }
 
     /* Add a null terminator at the end*/
-    dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
-    castIntToBinaryString(0, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
+    addNodeToDataTable(dataTable, 0);
+    // dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
+    // castIntToBinaryString(0, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
     
-    dataTable->dataCounter++;
+    // dataTable->dataCounter++;
 }
 
-void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addToDataTable(symbolTable *symbTable, dataDefinitionsTable *dataTable, parsedRow *pr) {
     printf("Adding stuff to data table!\n");
     
     if (pr->hasSymbol) {
@@ -245,7 +244,7 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
 
 }
 
-int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     FILE *fp;
 
     char fileNameWithExtension[FILENAME_MAX_LENGTH];
@@ -301,22 +300,37 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
     return generalErrorFlag;
 }
 
-int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+/*
+    Add the dataTable section that we collected from the first iteration, into the end of the code table
+    
+    @param dataDefinitionsTable *dataTable - A pointer to the data table
+    @param codeInstructionsTable *codeTable - A pointer to the code table
+*/
+void addDataToCodeTable(dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable) {
+    dataDefinitionNode *temp = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
+    temp = dataTable->head;
+
+    while (temp != NULL) {
+    //     // printf("%s\n", temp->binaryData);
+        codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
+        
+        memcpy(codeTable->rows[codeTable->instructionCount], temp->binaryData, MAX_KEYWORD_BINARY_LENGTH);
+    //     // memcpy(codeTable->rows[codeTable->instructionCount], "123456789000", MAX_KEYWORD_BINARY_LENGTH);
+        *(codeTable->rows[codeTable->instructionCount] + MAX_KEYWORD_BINARY_LENGTH) = '\0';
+        codeTable->instructionCount++;
+
+        temp = temp->next;
+    }
+}
+
+int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     int i, relocMemAddressFromSymbTable;
     relocationTableNode *temp = symbTable->relocTable->head;
     parsedRowNode *prNode = prList->head;
     symbolTableNode *symbTableNode;
     int generalErrorFlag = 0;
 
-    printf("Starting second iteration!\n");
-
-    for (i = 0; i < dataTable->dataCounter; i++) {
-        printf("adding to IC = %d \n", codeTable->instructionCount+1);
-        codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
-        memcpy(codeTable->rows[codeTable->instructionCount], dataTable->rows[i], MAX_KEYWORD_BINARY_LENGTH);
-        *(codeTable->rows[codeTable->instructionCount] + MAX_KEYWORD_BINARY_LENGTH) = '\0';
-        codeTable->instructionCount++;
-    }
+    addDataToCodeTable(dataTable, codeTable);
 
     for(i = 0; i < symbTable->relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
         printf("Working on %s (%d) \n", temp->symbolName, temp->memAddress);
@@ -338,9 +352,9 @@ int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
         if(prNode->pr.rowType == ENTRY_DECLARATION) {
             symbTableNode = fetchFromSymbTableByName(symbTable, prNode->pr.rowMetadata.entryRowMetadata.labelName);
             if (symbTableNode == NULL) {
-                printf("TODO node doesnt exist\n");
+                printEntryDoesntExist(&prNode->pr);
+                generalErrorFlag = 1;
             } else {
-                printf("Yup!\n");
                 symbTableNode->symbolType = ENTRY_DECLARATION;
             }
         }

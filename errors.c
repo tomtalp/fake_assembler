@@ -20,6 +20,13 @@ void printFailedOpeningFile(char *fileName) {
     printf(RESET_PRINT);
 }
 
+void printEntryDoesntExist(parsedRow *pr) {
+    printf(BOLD_RED_PRINT "Error %s:%d - ", pr->fileName, pr->originalLineNum);
+    printf(RESET_PRINT);
+    printf(BOLD_WHITE_PRINT " symbol %s doesn't exist!\n", pr->rowMetadata.entryRowMetadata.labelName);
+    printf(RESET_PRINT);
+}
+
 void printParserError(parsedRow *pr) {
     printf(BOLD_RED_PRINT "Error %s:%d - ", pr->fileName, pr->originalLineNum);
     printf(RESET_PRINT);

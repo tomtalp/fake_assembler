@@ -13,4 +13,5 @@ void printMissingFilesError();
 void printParserError(parsedRow *pr);
 void printGeneralFileError(char *fileName);
 void printFailedOpeningFile(char *fileName);
+void printEntryDoesntExist(parsedRow *pr);
 #endif
