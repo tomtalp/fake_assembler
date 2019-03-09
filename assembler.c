@@ -283,8 +283,9 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
                     addToCodeTable(symbTable, codeTable, pr);
                 } else if (pr->rowType == EXTERNAL_DECLARATION) {
                     addNodeToSymbolTable(symbTable, pr->rowMetadata.externRowMetadata.labelName, codeTable->instructionCount, EXTERNAL_SYMBOL);
-                } else { /* Entry type */
-                    addNodeToSymbolTable(symbTable, pr->rowMetadata.entryRowMetadata.labelName, codeTable->instructionCount, ENTRY_SYMBOL);
+                } else { /* Entry delcaration */
+                    printf("Not handled now\n");
+                    // addNodeToSymbolTable(symbTable, pr->rowMetadata.entryRowMetadata.labelName, codeTable->instructionCount, ENTRY_SYMBOL);
                 }
             }
 
@@ -292,8 +293,10 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
         fclose(fp);
     }
 
-    /* Update symbol table with updated IC */
-    updateSymbolTableAddresses(symbTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
+    if (generalErrorFlag == 0) {
+        /* Update symbol table with updated IC, if we didn't encounter any errors so far */
+        updateSymbolTableAddresses(symbTable, BASE_MEM_ADDRESS, codeTable->instructionCount);
+    }
 
     return generalErrorFlag;
 }
@@ -301,7 +304,9 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
 int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     int i, relocMemAddressFromSymbTable;
     relocationTableNode *temp = symbTable->relocTable->head;
+    parsedRowNode *prNode = prList->head;
     symbolTableNode *symbTableNode;
+    int generalErrorFlag = 0;
 
     printf("Starting second iteration!\n");
 
@@ -320,7 +325,6 @@ int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
             printf("Error! Symbol %s doesn't exist\n", temp->symbolName);
         } else {
             if (symbTableNode->symbolType == EXTERNAL_SYMBOL) {
-                printf("yoyo\n");
                 castIntToBinaryString(0, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
                 addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], EXTERNAL_TYPE);
             } else {
@@ -330,6 +334,20 @@ int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
         }
     }
 
-    return 0;
+    while (prNode != NULL) {
+        if(prNode->pr.rowType == ENTRY_DECLARATION) {
+            symbTableNode = fetchFromSymbTableByName(symbTable, prNode->pr.rowMetadata.entryRowMetadata.labelName);
+            if (symbTableNode == NULL) {
+                printf("TODO node doesnt exist\n");
+            } else {
+                printf("Yup!\n");
+                symbTableNode->symbolType = ENTRY_DECLARATION;
+            }
+        }
+        prNode = prNode->next;
+    }
+
+
+    return generalErrorFlag;
 
 }

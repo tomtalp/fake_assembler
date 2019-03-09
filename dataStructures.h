@@ -208,7 +208,7 @@ typedef struct parsedRowList {
 
 void initSymbolTable(symbolTable *symbTable);
 void printSymbolTable(symbolTable *tb);
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int symbolType);
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType);
 void printDataTable(dataDefinitionsTables *dataTable);
 void printCodeTable(codeInstructionsTable *codeTable);
 void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);

@@ -24,7 +24,15 @@ void printSymbolTable(symbolTable *tb) {
     }
 }
 
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int symbolType) {
+/*
+    Add a new node to our symbol table
+
+    @param symbolTable *tb - A pointer to the symbol table we're working with
+    @param char *symbolName - The name of the symbol
+    @param int memAddress - The memory address for the given symbol
+    @param enum SYMBOL_TYPES symbolType - A flag indicating what kind of symbol we're adding
+*/
+void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType) {
     symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
 
@@ -47,12 +55,7 @@ void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, int
     }
 
     temp->next = newNode;
-    tb->symbolsCounter += 1;
-
-    // temp = tb->head->next;
-    // tb->head->next = newNode;
-    // newNode->next = temp;
-    
+    tb->symbolsCounter += 1;    
 }
 
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress) {

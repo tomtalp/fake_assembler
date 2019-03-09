@@ -214,29 +214,36 @@ void dumpEntryExternData(symbolTable *symbTable, char *baseFileName) {
     int i;
     int hasEntryData = 0;
     int hasExternData = 0;
-    symbolTableNode *temp = symbTable->head;
+    symbolTableNode *symbNode = symbTable->head;
+    relocationTableNode *relocNode = symbTable->relocTable->head;
 
     appendExtensionToFilename(baseFileName, entryOutputFileName, ENTRY_OUTPUT_FILE_EXTENSION);
     appendExtensionToFilename(baseFileName, externOutputFileName, EXTERN_OUTPUT_FILE_EXTENSION);
 
-    for(i = 0; i < symbTable->symbolsCounter; temp = temp->next, i++)  {   
-        if (temp->symbolType == ENTRY_SYMBOL) {
+    for (i = 0; i < symbTable->symbolsCounter; symbNode = symbNode->next, i++)  {   
+        if (symbNode->symbolType == ENTRY_SYMBOL) {
             if (!hasEntryData) {
                 fpEntry = fopen(entryOutputFileName, "w");
                 hasEntryData = 1;
             }
 
-            fprintf(fpEntry, "%s    %d\n", temp->symbolName, temp->memoryAddress);
-        } else if (temp->symbolType == EXTERNAL_SYMBOL) {
+            fprintf(fpEntry, "%s    %d\n", symbNode->symbolName, symbNode->memoryAddress);
+        }
+    }
+
+    while (relocNode != NULL) { /* Go over data that needs to be relocated, and check if it needs to be relocated because it's external */
+        if (fetchFromSymbTableByName(symbTable, relocNode->symbolName)->symbolType == EXTERNAL_SYMBOL) {
             if (!hasExternData) {
                 fpExtern = fopen(externOutputFileName, "w");
                 hasExternData = 1;
             }
-
-            fprintf(fpExtern, "%s    %d\n", temp->symbolName, temp->memoryAddress);
+            fprintf(fpExtern, "%s    %d\n", relocNode->symbolName, relocNode->memAddress);
         }
+        relocNode = relocNode->next;
     }
 
+
+    /* Close files */
     if (hasEntryData) {
         fclose(fpEntry);
     }
