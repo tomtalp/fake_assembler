@@ -6,38 +6,63 @@
 #include "utils.h"
 #include "errors.h"
 
-// #include "dataStructures.h" /* TODO - I get this import from utils.h, is this fine? If I use it - error */
+/*
+    Iterate over the raw data, and parse a single digit or a list of numbers.
+    This runs after the validateIntDataDeclaration() func, so we know our data is valid and can be
+    legally parsed.
 
-
-void addDataTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
+    @param dataDefinitionsTables *dataTable - The data definitions binary table, used to add the parsed numbers in binary
+    @param parsedRow *pr - The row we're working with, containing the data to be parsed
+*/
+void addDataTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
     /* We're supposed to be dealing with a sequence of integers. We'll parse each one 
     and cast into an int, and insert into the data table */
-
+    
     int num, i;
+    int isNegative = 0;
 
     i = 0;
-
-    for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0; i++) {
+    printf("rawData = '%s'\n", pr->rowMetadata.dataRowMetadata.rawData);
+    /* Iterate over the entire raw string. Each for-loop iteration is considered a new number parsing */
+    for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0;) {
         num = 0;
+        isNegative = 0;
 
         while (pr->rowMetadata.dataRowMetadata.rawData[i] != 0 && !isspace(pr->rowMetadata.dataRowMetadata.rawData[i]) && pr->rowMetadata.dataRowMetadata.rawData[i] != ',') {
-            num = num * 10;
-            if (!isdigit(pr->rowMetadata.dataRowMetadata.rawData[i])) {
-                printf("Woopsie, got a non digit in data type parsing! TODO HANDLE THIS\n");
+            if (pr->rowMetadata.dataRowMetadata.rawData[i] == '-') {
+                isNegative = 1;
+                i++;
+                continue;
+            } else if (pr->rowMetadata.dataRowMetadata.rawData[i] == '+') {
+                i++;
+                continue;
             }
-            num += pr->rowMetadata.dataRowMetadata.rawData[i] - '0'; // Add the character digit as an int
+            printf("num = %d\n", num);
+            num = num * 10;
+            printf("Char = '%c', Digit = '%d'\n", pr->rowMetadata.dataRowMetadata.rawData[i], pr->rowMetadata.dataRowMetadata.rawData[i] - '0');
+            num += pr->rowMetadata.dataRowMetadata.rawData[i] - '0'; /* Add the character digit as an int */
             i++;
         }
-        i++; /* Skip the comma or space that just made us stop */
 
+        if (isNegative) {
+            num = num * (-1);
+        }
+
+        printf("Detected num = '%d'\n", num);
         dataTable->rows[dataTable->dataCounter] = malloc(MAX_KEYWORD_BINARY_LENGTH * sizeof(char));
         castIntToBinaryString(num, dataTable->rows[dataTable->dataCounter], MAX_KEYWORD_BINARY_LENGTH);
         
         dataTable->dataCounter++;
+
+        /* Get to the next number, if exists, while skipping all spaces or comas */
+        while (pr->rowMetadata.dataRowMetadata.rawData[i] != 0 && (isspace(pr->rowMetadata.dataRowMetadata.rawData[i]) || pr->rowMetadata.dataRowMetadata.rawData[i] == ',')) { 
+            printf("Skipping '%c'\n", pr->rowMetadata.dataRowMetadata.rawData[i]);
+            i++;
+        }
     }
 }
 
-void addStringTypeToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, parsedRow *pr) {
+void addStringTypeToDataTable(dataDefinitionsTables *dataTable, parsedRow *pr) {
     printf("Adding string data. Raw data = %s\n", pr->rowMetadata.dataRowMetadata.rawData);
     int num, i;
 
@@ -68,9 +93,9 @@ void addToDataTable(symbolTable *symbTable, dataDefinitionsTables *dataTable, pa
     }
 
     if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
-        addDataTypeToDataTable(symbTable, dataTable, pr);
+        addDataTypeToDataTable(dataTable, pr);
     } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
-        addStringTypeToDataTable(symbTable, dataTable, pr);
+        addStringTypeToDataTable(dataTable, pr);
     }
 }
 
@@ -274,7 +299,7 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
     return generalErrorFlag;
 }
 
-int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     int i, relocMemAddressFromSymbTable;
     relocationTableNode *temp = symbTable->relocTable->head;
 

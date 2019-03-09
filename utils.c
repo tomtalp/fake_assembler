@@ -30,24 +30,56 @@ void trimLeadingWhitespace(char *source) {
     *source = '\0'; /* Terminate the string */
 }
 
-char getBinaryChar(int mask, int value) {
-    char val;
-    if ((mask & value) == 0) {
-        return '0';
+/* 
+    Get the binary character for a number with a given mask.
+    If the negativity number is on, we flip the results
+
+    @param int mask - The mask we're comparing the number with
+    @param int value - The original value, in it's absolute value, and +1 if previously negative
+    @param int isNegative - Negativity flag
+*/
+char getBinaryChar(int mask, int value, int isNegative) {
+    if (isNegative) { /* Flip the bit of the results */
+        if ((mask & value) == 0) {
+            return '1';
+        } else {
+            return '0';
+        }
+    } else {
+        if ((mask & value) == 0) {
+            return '0';
+        }
     }
     return '1';
+    
 }
 
+/* 
+    Convert an integer into a binary string representation. 
+    If the number is negative, we'll flip the bits and add +1
+
+    @param int n - The value to be converted
+    @param char *binaryStr - The string to store the results
+    @param int sizeOfBinaryKeyword - The amount of bits we have available
+*/
 void castIntToBinaryString(int n, char *binaryStr, int sizeOfBinaryKeyword) {
+    char *copy = binaryStr;
+    int isNegative = n < 0 ? 1 : 0;
     int mask, i;
+
     i = 0;
+
+    if (isNegative) { /* Handle negative numbers - For two's compliment we need to flip the number and add +1. We'll add before flipping since it makes it easier (And the results are the same!) */
+        n += 1;
+        n *= -1;
+    }
     mask = 1 << (sizeOfBinaryKeyword-1);
     while (mask) {
-        *binaryStr = getBinaryChar(mask, n);
+        *binaryStr = getBinaryChar(mask, n, isNegative);
         binaryStr++;
         mask >>= 1;
     }
-    *(binaryStr) = '\0'; // TODO itay - do I need this?
+    *(binaryStr) = '\0';
 }
 
 int isEmptyRow(char *inputRow) {
