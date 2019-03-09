@@ -21,6 +21,6 @@ void printParserError(parsedRow *pr);
 void validateIntDataDeclaration(parsedRow *pr, char *rawData);
 void validateStringDataDeclaration(parsedRow *pr, char *rawData);
 void validateSymbolName(parsedRow *pr);
-void getExternDeclaration(parsedRow *pr, char *rawData);
+void getExternEntryDeclaration(parsedRow *pr, char *rawData);
 
 #endif

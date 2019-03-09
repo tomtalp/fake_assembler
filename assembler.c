@@ -253,7 +253,7 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
     int generalErrorFlag = 0;
     int rowNum = 0;
 
-    getFileNameWithExtension(fileName, fileNameWithExtension);
+    appendExtensionToFilename(fileName, fileNameWithExtension, ASSEMBLY_FILE_EXTENSION);
 
     fp = fopen(fileNameWithExtension, "r");
 
@@ -305,23 +305,16 @@ int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
 
     printf("Starting second iteration!\n");
 
-    // parsedRowNode *temp = prList->head;
-
-    // for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
-
-    // }
-
     for (i = 0; i < dataTable->dataCounter; i++) {
         printf("adding to IC = %d \n", codeTable->instructionCount+1);
         codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
         memcpy(codeTable->rows[codeTable->instructionCount], dataTable->rows[i], MAX_KEYWORD_BINARY_LENGTH);
-        *(codeTable->rows[codeTable->instructionCount] + MAX_KEYWORD_BINARY_LENGTH) = '\0'; // TODO WHAT....
+        *(codeTable->rows[codeTable->instructionCount] + MAX_KEYWORD_BINARY_LENGTH) = '\0';
         codeTable->instructionCount++;
     }
 
     for(i = 0; i < symbTable->relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
         printf("Working on %s (%d) \n", temp->symbolName, temp->memAddress);
-        // relocMemAddressFromSymbTable = fetchFromSymbTableByName(symbTable, temp->symbolName);
         symbTableNode = fetchFromSymbTableByName(symbTable, temp->symbolName);
         if (symbTableNode == NULL ) {
             printf("Error! Symbol %s doesn't exist\n", temp->symbolName);

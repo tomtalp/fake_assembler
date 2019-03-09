@@ -86,16 +86,14 @@ int main(int argc, char *argv[]) {
         initParsedRowList(&rowsList);
 
         run(argv[i], &symbTable, &dataTable, &codeTable, &rowsList);
+
         if (errorFlag) {
             printGeneralFileError(argv[i]);
             continue;
+        } else {
+            dumpCode(&codeTable, argv[i], dataTable.dataCounter);
+            dumpEntryExternData(&symbTable, argv[i]);
         }
-    }
-
-    printf("#############################################################\n");
-    char yo[2];
-    for (i = 0; i < codeTable.instructionCount; i++) {
-        keywordToBase64(codeTable.rows[i], yo);
     }
     
 }

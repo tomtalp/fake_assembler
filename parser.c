@@ -421,27 +421,35 @@ void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
 }
 
 /*
-    Receive a parsedRow object and the raw data, and extract the extern symbol name.
+    Receive a parsedRow object and the raw data, and extract the extern/entry symbol name.
 
     @param parsedRow *pr - Parsed Row object pointer
-    @param char *rawData - String containing the expected external declaration
+    @param char *rawData - String containing the expected external/entry declaration
 */
-void getExternDeclaration(parsedRow *pr, char *rawData) {
-    // strcpy(pr->rowMetadata.externRowMetadata.labelName, inputRow);
+void getExternEntryDeclaration(parsedRow *pr, char *rawData) {
     int hasExtraneousText = 0;
     int i = 0;
 
     while (*rawData != '\0' && !isspace(*rawData) && i < MAX_INSTRUCTION_LENGTH) {
-        pr->rowMetadata.externRowMetadata.labelName[i] = *rawData;
+        if (pr->rowType == EXTERNAL_DECLARATION) {
+            pr->rowMetadata.externRowMetadata.labelName[i] = *rawData;
+        } else {
+            pr->rowMetadata.entryRowMetadata.labelName[i] = *rawData;
+        }
         rawData++;
         i++;
     }
 
-    pr->rowMetadata.externRowMetadata.labelName[++i] = '\0';
+    if (pr->rowType == EXTERNAL_DECLARATION) {
+        pr->rowMetadata.externRowMetadata.labelName[++i] = '\0';
+    } else {
+        pr->rowMetadata.entryRowMetadata.labelName[++i] = '\0';
+    }
+    
 
     while (*rawData != '\0') { /* Verify there's nothing left after the extern declaration */
         if (!isspace(*rawData)) {
-            pr->errorType = EXTRANEOUS_TEXT_AFTER_EXTERN;
+            pr->errorType = EXTRANEOUS_TEXT_AFTER_EXTERN_ENTRY;
             return;
         }
         rawData++;
@@ -599,7 +607,6 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
         }
 
     } else if (pr->rowType == CODE_INSTRUCTION) {
-        printf("So dealing with a code instruction\n");
         getCodeOperands(inputRow, pr);
 
         if (pr->errorType != NO_ERROR) {
@@ -612,17 +619,14 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
                 return;
         }
 
-    } else if (pr->rowType == EXTERNAL_DECLARATION) {
-        printf("Dealing with external declaration!\n");
-        getExternDeclaration(pr, inputRow);
+    } else if (pr->rowType == EXTERNAL_DECLARATION || pr->rowType == ENTRY_DECLARATION) {
+        getExternEntryDeclaration(pr, inputRow);
         if (pr->errorType != NO_ERROR) {
                 return;
         }
-    } else if (pr->rowType == ENTRY_DECLARATION) {
-        printf("Dealing with an entry declaration!\n");
-        strcpy(pr->rowMetadata.entryRowMetadata.labelName, inputRow);
     } else {
-        printf("This should be an error...\n");
+        pr->errorType = UNKNOWN_ERROR;
+        return;
     }
 }
 

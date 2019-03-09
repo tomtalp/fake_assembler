@@ -81,11 +81,14 @@ void printParserError(parsedRow *pr) {
         case EXTRANEOS_TEXT_AFTER_OPERANDS:
             printf(BOLD_WHITE_PRINT "Extraneous text after second operand\n");
             break;
-        case EXTRANEOUS_TEXT_AFTER_EXTERN:
-            printf(BOLD_WHITE_PRINT "Extraneous text after .extern declaration\n");
+        case EXTRANEOUS_TEXT_AFTER_EXTERN_ENTRY:
+            printf(BOLD_WHITE_PRINT ".entry / .extern declarations can only have a single symbol name\n");
+            break;
+        case UNKNOWN_ERROR:
+            printf(BOLD_WHITE_PRINT "Encountered an unknown error...\n");
             break;
         default:
-            printf("Something else\n");
+            printf(BOLD_WHITE_PRINT "Encountered an unknown error...\n");
             break;
     } 
     printf(RESET_PRINT);

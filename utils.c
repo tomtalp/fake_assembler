@@ -124,12 +124,19 @@ void memKeywordToBinaryString(memKeyword *mem, char *binaryStr) {
     binaryStr = binaryStr + KEYWORD_ENCODING_TYPE_BITS;
 }
 
-void getFileNameWithExtension(char *fileName, char *fileNameWithExtension) {
-    strcpy(fileNameWithExtension, fileName);
-    strcat(fileNameWithExtension, ASSEMBLER_FILE_EXTENSION);
+/*
+    Receive a base filename, and append a given extension to the output by concatenating.
+
+    @param char *fileName - The base file name
+    @param char *output - The string that will hold the final result
+    @param char *extenson - The desired extension to append
+*/
+void appendExtensionToFilename(char *fileName, char *output, char *extension) {
+    strcpy(output, fileName);
+    strcat(output, extension);
 }
 
-void keywordToBase64(char *keyword, char *base64Keyword) {
+void binaryKeywordToBase64(char *keyword, char *base64Keyword) {
     // printf("KW = '%s'\n", keyword);
     int i;
     char firstKeyWordSlice[(MAX_KEYWORD_BINARY_LENGTH/2) + 1];
@@ -158,24 +165,83 @@ void keywordToBase64(char *keyword, char *base64Keyword) {
 
     base64Keyword[0] = base64Constants[firstKeyWordNum];
     base64Keyword[1] = base64Constants[secondKeyWordNum];
-
+    base64Keyword[2] = '\0';
     // printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s' \n", keyword, firstKeyWordSlice, secondKeyWordSlice);
     printf("%s\n", base64Keyword);
     // printf("#######################################\n");
 }
 
-// void dumpCode(codeInstructionsTable *codeTable, char *outputFileName) {
-//     int i;
-//     char keywordInBaste64[2];
-//     FILE *fp;
+/*
+    Receive the finalized code table, and write it's content to a file in base 64 encoding.
+    The file header needs to be the instructions count & the data count. 
 
-//     fp = fopen("./ps.ob", "w");
+    @param codeInstructionsTable *codeTable - The code table containing all the binary keywords
+    @param char *baseFileName - The base filename which will contain the output
+    @param int dataCount - The counter of the data declarations
+*/
+void dumpCode(codeInstructionsTable *codeTable, char *baseFileName, int dataCount) {
+    int i;
+    char keywordInBase64[BASE_64_KEYWORD_SIZE + 1];
+    char fileNameWithExtension[FILENAME_MAX_LENGTH];
+    FILE *fp;
 
-//     for (i = 0; i < codeTable->instructionCount; i++) {
-//         keywordToBase64(codeTable->rows[i], keywordInBaste64);
-//         fprintf(fp, keywordInBaste64);
-//         // printf("Code table row #%d mem addr = %s\n", i, codeTable->rows[i]);
-//     }    
+    appendExtensionToFilename(baseFileName, fileNameWithExtension, MAIN_OUTPUT_FILE_EXTENSION);
 
-//     fclose(fp);
-// }
+    fp = fopen(fileNameWithExtension, "w");
+
+    fprintf(fp, "%d %d\n", codeTable->instructionCount - dataCount, dataCount); /* Subtract DC from IC, which was added previously in the 2nd iteration */
+
+    for (i = 0; i < codeTable->instructionCount; i++) {
+        binaryKeywordToBase64(codeTable->rows[i], keywordInBase64);
+        fprintf(fp, "%s\n", keywordInBase64);
+    }    
+
+    fclose(fp);
+}
+
+/*
+    Write the entry/extern symbols declared in our code.
+    If there are no entry/extern symbols, no file will be created.
+
+    @param symbolTable *symbTable - The symbol table containing the entry/extern declarations
+    @param char *baseFileName - The base filename which will contain the output    
+*/
+void dumpEntryExternData(symbolTable *symbTable, char *baseFileName) {
+    char entryOutputFileName[FILENAME_MAX_LENGTH];
+    char externOutputFileName[FILENAME_MAX_LENGTH];
+    FILE *fpExtern;
+    FILE *fpEntry;
+    int i;
+    int hasEntryData = 0;
+    int hasExternData = 0;
+    symbolTableNode *temp = symbTable->head;
+
+    appendExtensionToFilename(baseFileName, entryOutputFileName, ENTRY_OUTPUT_FILE_EXTENSION);
+    appendExtensionToFilename(baseFileName, externOutputFileName, EXTERN_OUTPUT_FILE_EXTENSION);
+
+    for(i = 0; i < symbTable->symbolsCounter; temp = temp->next, i++)  {   
+        if (temp->symbolType == ENTRY_SYMBOL) {
+            if (!hasEntryData) {
+                fpEntry = fopen(entryOutputFileName, "w");
+                hasEntryData = 1;
+            }
+
+            fprintf(fpEntry, "%s    %d\n", temp->symbolName, temp->memoryAddress);
+        } else if (temp->symbolType == EXTERNAL_SYMBOL) {
+            if (!hasExternData) {
+                fpExtern = fopen(externOutputFileName, "w");
+                hasExternData = 1;
+            }
+
+            fprintf(fpExtern, "%s    %d\n", temp->symbolName, temp->memoryAddress);
+        }
+    }
+
+    if (hasEntryData) {
+        fclose(fpEntry);
+    }
+
+    if (hasExternData) {
+        fclose(fpExtern);
+    }
+}
