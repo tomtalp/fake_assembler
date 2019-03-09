@@ -20,5 +20,6 @@ void appendExtensionToFilename(char *fileName, char *output, char *extension);
 void binaryKeywordToBase64(char *keyword, char *base64Keyword);
 void dumpCode(codeInstructionsTable *codeTable, char *baseFileName, int dataCount);
 void dumpEntryExternData(symbolTable *symbTable, char *baseFileName);
+void freeData(symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList);
 
 #endif

@@ -215,10 +215,11 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
                 case IMMEDIATE_MODE:
                     addImmediateValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], pr->rowMetadata.codeRowMetadata.srcOperand);
                     addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
-
+                    break;
                 case DIRECT_MODE:
                     memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
                     addToRelocationsTable(symbTable->relocTable, pr->rowMetadata.codeRowMetadata.srcOperand, codeTable->instructionCount);
+                    break;
                 default:
                     break;
             }
@@ -238,10 +239,12 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
                 case IMMEDIATE_MODE:
                     addImmediateValueToBinaryKeyword(codeTable->rows[codeTable->instructionCount], pr->rowMetadata.codeRowMetadata.destOperand);
                     addEncodingTypeToBinaryKeyword(codeTable->rows[codeTable->instructionCount], ABSOLUTE_TYPE);
+                    break;
 
                 case DIRECT_MODE:
                     memcpy(codeTable->rows[codeTable->instructionCount], "zzzzzzzzzzzz", 12);
                     addToRelocationsTable(symbTable->relocTable, pr->rowMetadata.codeRowMetadata.destOperand, codeTable->instructionCount);
+                    break;
                 default:
                     break;
             }    
@@ -351,7 +354,7 @@ int relocateSymbolAddresses(symbolTable *symbTable, codeInstructionsTable *codeT
 
     while (temp != NULL) {
         symbTableNode = fetchFromSymbTableByName(symbTable, temp->symbolName);
-        
+        printf("wattttt = %s\n", temp->symbolName);
         if (symbTableNode == NULL ) {
             printSymbolDoesntExist(temp->symbolName);
             errorFlag = 1;
@@ -366,7 +369,6 @@ int relocateSymbolAddresses(symbolTable *symbTable, codeInstructionsTable *codeT
         }
         temp = temp->next;
     }
-
     return errorFlag;
 }
 
@@ -396,7 +398,6 @@ int setEntrySymbols(parsedRowList *prList, symbolTable *symbTable) {
         
         prNode = prNode->next;
     }
-
     return errorFlag;
 }
 
@@ -422,6 +423,11 @@ int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable
     int generalErrorFlag = 0;
     addDataToCodeTable(dataTable, codeTable);
     generalErrorFlag = relocateSymbolAddresses(symbTable, codeTable);
+
+    if (generalErrorFlag > 0) {
+        return generalErrorFlag;
+    }
+
     generalErrorFlag = setEntrySymbols(prList, symbTable);
 
     return generalErrorFlag;

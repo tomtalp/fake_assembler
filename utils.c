@@ -249,3 +249,44 @@ void dumpEntryExternData(symbolTable *symbTable, char *baseFileName) {
         fclose(fpExtern);
     }
 }
+
+void freeData(symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+    symbolTableNode *symbNode1, *symbNode2;
+    dataDefinitionNode *dataNode1, *dataNode2;
+    parsedRowNode *prNode1, *prNode2;
+
+    int i;
+
+    symbNode1 = symbTable->head;
+    
+    while (symbNode1 != NULL) {
+        symbNode2 = symbNode1;
+        symbNode1 = symbNode1->next;
+
+        free(symbNode2);
+    }
+
+    dataNode1 = dataTable->head;
+
+    while (dataNode1 != NULL) {
+        dataNode2 = dataNode1;
+        dataNode1 = dataNode1->next;
+
+        free(dataNode2);
+    }
+
+    prNode1 = prList->head;
+
+    while (prNode1 != NULL) {
+        prNode2 = prNode1;
+        prNode1 = prNode1->next;
+
+        free(prNode2);
+    }
+
+    for (i = 0; i < codeTable->instructionCount; i++) {
+        free(codeTable->rows[i]);
+    }
+    codeTable->instructionCount = 0;
+
+}

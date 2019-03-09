@@ -45,8 +45,8 @@ int run(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable,
     printf("Symbol table after first iteration - \n");
     printSymbolTable(symbTable);
 
-    // printf("Code table after first iteration - \n");
-    // printCodeTable(codeTable);
+    printf("Code table after first iteration - \n");
+    printCodeTable(codeTable);
 
     // printf("######################################\n");
     // printParsedRowsList(rowsList);
@@ -91,6 +91,9 @@ int main(int argc, char *argv[]) {
             dumpCode(&codeTable, argv[i], dataTable.dataCounter);
             dumpEntryExternData(&symbTable, argv[i]);
         }
+        freeData(&symbTable, &dataTable, &codeTable, &rowsList);
+        // printSymbolTable(&symbTable);
+        printCodeTable(&codeTable);
     }
     
 }
