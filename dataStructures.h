@@ -14,7 +14,7 @@
 #define RESERVED_KEYWORDS_COUNT 27
 #define DATA_DECLARATION_TYPES_COUNT 2
 #define OP_CODES_COUNT 16
-#define MAX_INSTRUCTION_LENGTH 80 /* TODO - IS THIS OK? */
+#define MAX_INSTRUCTION_LENGTH 80
 #define REGISTERS_COUNT 8
 #define REGISTER_KEYWORD_LENGTH 3
 #define REGISTER_OPERAND_BINARY_SIZE 5
@@ -62,11 +62,6 @@ typedef struct codeInstructionsTable {
 /* The data definition section - contains the data counter (DC) and an array of data value
 encoded in binary*/
 
-// typedef struct dataDefinitionsTables {
-//     int dataCounter;
-//     char *rows[MAX_INSTRUCTIONS];
-// } dataDefinitionsTables;
-
 typedef struct dataDefinitionNode {
     char binaryData[MAX_KEYWORD_BINARY_LENGTH+1];
     struct dataDefinitionNode *next;
@@ -77,6 +72,7 @@ typedef struct dataDefinitionsTable {
     int dataCounter;
 } dataDefinitionsTable;
 
+/* Types of legal symbols in our symbol table */
 enum SYMBOL_TYPES {
     DATA_SYMBOL,
     INSTRUCTION_SYMBOL,
@@ -84,6 +80,12 @@ enum SYMBOL_TYPES {
     ENTRY_SYMBOL
 };
 
+/* 
+    Relocation table - A linked list containing data for symbols that later need to be relocated
+    For example, if we have a label declaration - `NAME: .data 123`
+    And then that label is used, for example `mov NAME, @r2` then we'll store a record for NAME and this
+    command in the relocation table, and later we can replace NAME with the correct memory address
+ */
 typedef struct relocationTableNode {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memAddress;
@@ -95,6 +97,7 @@ typedef struct relocationTable {
     int relocationVariablesCounter;
 } relocationTable;
 
+/* A symbol table for holding data on symbols detected in the code  */
 typedef struct symbolTableNode {
     char symbolName[MAX_SYMBOL_NAME_LENGTH];
     int memoryAddress;
@@ -105,9 +108,10 @@ typedef struct symbolTableNode {
 typedef struct symbolTable {
     symbolTableNode *head;
     int symbolsCounter;
-    relocationTable *relocTable;
+    relocationTable *relocTable; /* Store the reloc table inside the symbol table, since they're always used together */
 } symbolTable;
 
+/* Type of rows that we can encounter*/
 enum ROW_TYPES {
     CODE_INSTRUCTION,
     DATA_DECLARATION,
@@ -115,6 +119,7 @@ enum ROW_TYPES {
     ENTRY_DECLARATION
 };
 
+/* Addressing modes for code operands */
 enum LEGAL_ADDRESSING_MODES {
     NO_OPERAND = 0,
     IMMEDIATE_MODE = 1,
@@ -122,32 +127,32 @@ enum LEGAL_ADDRESSING_MODES {
     REGISTER_MODE = 5
 };
 
+/* Types of legal data definitions - string defs or int defs*/
 enum DATA_DEF_TYPES {
     DATA_TYPE,
     STRING_TYPE
 };
 
+/* Encoding types for our binary keywords */
 enum ENCODING_TYPES {
     ABSOLUTE_TYPE = 0,
     EXTERNAL_TYPE = 1,
     RELOCATABLE_TYPE = 2
 };
 
+/* Metadata for a data def type */
 typedef struct dataTypeInfo {
     char *dataDefName;
     int dataDefCodeNum;
 } dataTypeInfo;
 
-typedef struct registerKeyword {
-    char keyword[REGISTER_KEYWORD_LENGTH];
-    int value;
-} registerKeyword;
-
+/* Operation code information */
 typedef struct opCode {
     char *opCodeName;
     int opCodeNum;
 } opCode;
 
+/* Metadata for code instructions - info on each operand and their types, and the op code */
 struct CODE_INSTRUCTION_ROW_METADATA {
     opCode oc;
     char srcOperand[MAX_SYMBOL_NAME_LENGTH];
@@ -156,15 +161,18 @@ struct CODE_INSTRUCTION_ROW_METADATA {
     enum LEGAL_ADDRESSING_MODES destOperandType;
 };
 
+/* data declaration metadata - data type & raw data */
 struct DATA_DECLARATION_ROW_METADATA {
     enum DATA_DEF_TYPES type;
     char rawData[MAX_INSTRUCTION_LENGTH];
 };
 
+/* extern/entry declaration label name */
 struct EXTERN_ENTRY_DECLARATION_ROW_METADATA {
     char labelName[MAX_SYMBOL_NAME_LENGTH];
 };
 
+/* Parsing errors we might encounter */
 typedef enum {
     NO_ERROR,
     INVALID_OPCODE_ERROR,
@@ -174,7 +182,7 @@ typedef enum {
     INVALID_DATA_DEF_TYPE,
     INVALID_REGISTER_NAME,
     INVALID_LABEL_DECLARATION,
-    LABEL_DECLARATION_TOO_LONG, /* TODO */
+    LABEL_DECLARATION_TOO_LONG,
     DATA_STRING_DECLARATION_MISSING_QUOTES,
     EXTRANEOUS_TEXT_AFTER_STRING_QUOTES,
     ILLEGAL_COMMA_IN_DATA_DECLARATION,
@@ -193,6 +201,10 @@ typedef enum {
     UNKNOWN_ERROR,
 } ERROR_TYPES;
 
+/* 
+    A struct for holding data on a parsed row. Once we encounter a row, we want to extract all
+    of the info we can for that row, so we'll store it in a special struct
+*/
 typedef struct parsedRow {
     char fileName[FILENAME_MAX_LENGTH];
     int originalLineNum;
@@ -208,6 +220,7 @@ typedef struct parsedRow {
     } rowMetadata;
 } parsedRow;
 
+/* Store a linked list of parsed rows, so that we can iterate over them once again in the 2nd iteration */
 typedef struct parsedRowNode {
     parsedRow pr;
     struct parsedRowNode *next;

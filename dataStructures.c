@@ -4,6 +4,12 @@
 #include "dataStructures.h"
 #include "utils.h"
 
+/*
+    Initialize the symbol table by creating the head of the list, setting counter to 0
+    and initializing the reloc table that we have inside the symbol table
+
+    @param symbolTable *symbTable - Our symbol table
+*/
 void initSymbolTable(symbolTable *symbTable) {
     symbTable->head = NULL;
     symbTable->symbolsCounter = 0;
@@ -77,7 +83,6 @@ void addNodeToDataTable(dataDefinitionsTable *tb, int num) {
     dataDefinitionNode *temp = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
 
     /* Initialize the new node */
-    // strcpy(newNode->binaryData, binaryData);
     castIntToBinaryString(num, newNode->binaryData, MAX_KEYWORD_BINARY_LENGTH);
     newNode->next = NULL;
 
@@ -97,11 +102,24 @@ void addNodeToDataTable(dataDefinitionsTable *tb, int num) {
     tb->dataCounter += 1;    
 }
 
+/*
+    Initialize the data table
+
+    @param dataDefinitionsTable *dataTable - Pointer to the data table
+*/
 void initDataTable(dataDefinitionsTable *dataTable) {
     dataTable->head = NULL;
     dataTable->dataCounter = 0;
 }
 
+
+/*
+    Add a new value to the relocations table
+
+    @param relocationTable *relocTable - Pointer to the relocations table
+    @param char *varName - The name of the symbol that we'll later relocate
+    @param int memAddress - The memory address that needs to be relocated
+*/
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress) {
     relocationTableNode *newNode = (relocationTableNode*)malloc(sizeof(relocationTableNode));
     relocationTableNode *temp = (relocationTableNode*)malloc(sizeof(relocationTableNode));
@@ -154,6 +172,15 @@ void printCodeTable(codeInstructionsTable *codeTable) {
     }
 }
 
+/*
+    Update symbol table memory addresses, based on the calculated instructionCount (so that
+    data declarations reside adter the code instructions, in our final data structure)
+
+    @param symbolTable *tb - Pointer to the symbol table
+    @param int baseMemAddress - The base memory address in our code, so we can get the mem address to the right place
+    @param int instrutionCount - The instruction count that was calculated after initially building the code table
+
+*/
 void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount) {
     int i;
     symbolTableNode *temp = tb->head;
