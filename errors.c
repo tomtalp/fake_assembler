@@ -81,6 +81,9 @@ void printParserError(parsedRow *pr) {
         case EXTRANEOS_TEXT_AFTER_OPERANDS:
             printf(BOLD_WHITE_PRINT "Extraneous text after second operand\n");
             break;
+        case EXTRANEOUS_TEXT_AFTER_EXTERN:
+            printf(BOLD_WHITE_PRINT "Extraneous text after .extern declaration\n");
+            break;
         default:
             printf("Something else\n");
             break;

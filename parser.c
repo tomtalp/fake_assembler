@@ -218,7 +218,15 @@ int operandIsRegister(char *operand) {
 
 // TODO - Handle negative numbers
 int operandIsNumber(char *operand) {
+    int hasSign;
+
+    if (*operand == '+' || *operand == '-') {
+        hasSign = 1;
+        operand++;
+    }
+    printf("Checking '%s'\n", operand);
     while (*operand != '\0') {
+        // if (hasSign && (*operand == '+' || *operand == '-'))
         if (!isdigit(*operand)) {
             return 0;
         }
@@ -341,10 +349,6 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
         return;
     }
 
-    
-
-    
-
     /* Remove the operands from inputRow */
     while (*inputRowStart != 0) {
         *inputRow = *inputRowStart;
@@ -416,12 +420,40 @@ void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
     }
 }
 
+/*
+    Receive a parsedRow object and the raw data, and extract the extern symbol name.
+
+    @param parsedRow *pr - Parsed Row object pointer
+    @param char *rawData - String containing the expected external declaration
+*/
+void getExternDeclaration(parsedRow *pr, char *rawData) {
+    // strcpy(pr->rowMetadata.externRowMetadata.labelName, inputRow);
+    int hasExtraneousText = 0;
+    int i = 0;
+
+    while (*rawData != '\0' && !isspace(*rawData) && i < MAX_INSTRUCTION_LENGTH) {
+        pr->rowMetadata.externRowMetadata.labelName[i] = *rawData;
+        rawData++;
+        i++;
+    }
+
+    pr->rowMetadata.externRowMetadata.labelName[++i] = '\0';
+
+    while (*rawData != '\0') { /* Verify there's nothing left after the extern declaration */
+        if (!isspace(*rawData)) {
+            pr->errorType = EXTRANEOUS_TEXT_AFTER_EXTERN;
+            return;
+        }
+        rawData++;
+    }
+}
+
 /* 
     Receive a string that's supposed to represent an int data declaration, and make sure the string is valid.
     We check that the numbers are separated by commas, and that there are no illegal characters
 
-    @param *parsedRow - Parsed Row object pointer
-    @param *rawData - String containing the expected data declaration
+    @param parsedRow *pr - Parsed Row object pointer
+    @param char *rawData - String containing the expected data declaration
 
 */
 void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
@@ -582,7 +614,10 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
 
     } else if (pr->rowType == EXTERNAL_DECLARATION) {
         printf("Dealing with external declaration!\n");
-        strcpy(pr->rowMetadata.externRowMetadata.labelName, inputRow);
+        getExternDeclaration(pr, inputRow);
+        if (pr->errorType != NO_ERROR) {
+                return;
+        }
     } else if (pr->rowType == ENTRY_DECLARATION) {
         printf("Dealing with an entry declaration!\n");
         strcpy(pr->rowMetadata.entryRowMetadata.labelName, inputRow);

@@ -177,6 +177,7 @@ typedef enum {
     MULTIPLE_COMMAS_BETWEEN_OPERANDS,
     NO_TEXT_AFTER_COMMA,
     EXTRANEOS_TEXT_AFTER_OPERANDS,
+    EXTRANEOUS_TEXT_AFTER_EXTERN,
 } ERROR_TYPES;
 
 typedef struct parsedRow {
@@ -212,6 +213,6 @@ void printCodeTable(codeInstructionsTable *codeTable);
 void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress);
 void printRelocTable(relocationTable *relocTable);
-int fetchFromSymbTableByName(symbolTable *symbTable, char *symbolName);
-
+// int fetchFromSymbTableByName(symbolTable *symbTable, char *symbolName);
+symbolTableNode *fetchFromSymbTableByName(symbolTable *tb, char *symbolName);
 #endif

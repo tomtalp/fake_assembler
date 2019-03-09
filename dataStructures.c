@@ -122,14 +122,15 @@ void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instruc
 }
 
 
-int fetchFromSymbTableByName(symbolTable *tb, char *symbolName) {
+symbolTableNode *fetchFromSymbTableByName(symbolTable *tb, char *symbolName) {
     int i;
     symbolTableNode *temp = tb->head;
 
     for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {  
         if (strcmp(temp->symbolName, symbolName) == 0) {
-            return temp->memoryAddress;
+            // return temp->memoryAddress;
+            return temp;
         }
     }
-    return -1;
+    return NULL;
 }

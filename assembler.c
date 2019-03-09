@@ -140,7 +140,6 @@ void addImmediateValueToBinaryKeyword(char *keyword, char *immediateValueStr) {
     char binaryVal[CODE_INSTRUCTION_KEYWORD_DATA_SIZE];
 
     immediateVal = strToInt(immediateValueStr);
-
     castIntToBinaryString(immediateVal, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
     memcpy(keyword, binaryVal, CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
 }
@@ -302,6 +301,7 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTables
 int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     int i, relocMemAddressFromSymbTable;
     relocationTableNode *temp = symbTable->relocTable->head;
+    symbolTableNode *symbTableNode;
 
     printf("Starting second iteration!\n");
 
@@ -321,12 +321,19 @@ int secondIteration(symbolTable *symbTable, dataDefinitionsTables *dataTable, co
 
     for(i = 0; i < symbTable->relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
         printf("Working on %s (%d) \n", temp->symbolName, temp->memAddress);
-        relocMemAddressFromSymbTable = fetchFromSymbTableByName(symbTable, temp->symbolName);
-        if (relocMemAddressFromSymbTable == -1 ) {
+        // relocMemAddressFromSymbTable = fetchFromSymbTableByName(symbTable, temp->symbolName);
+        symbTableNode = fetchFromSymbTableByName(symbTable, temp->symbolName);
+        if (symbTableNode == NULL ) {
             printf("Error! Symbol %s doesn't exist\n", temp->symbolName);
         } else {
-            castIntToBinaryString(relocMemAddressFromSymbTable, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
-            addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], RELOCATABLE_TYPE);
+            if (symbTableNode->symbolType == EXTERNAL_SYMBOL) {
+                printf("yoyo\n");
+                castIntToBinaryString(0, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
+                addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], EXTERNAL_TYPE);
+            } else {
+                castIntToBinaryString(symbTableNode->memoryAddress, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
+                addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], RELOCATABLE_TYPE);
+            }
         }
     }
 
