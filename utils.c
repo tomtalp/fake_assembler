@@ -250,6 +250,9 @@ void dumpEntryExternData(symbolTable *symbTable, char *baseFileName) {
     }
 }
 
+/*
+
+*/
 void freeData(symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     symbolTableNode *symbNode1, *symbNode2;
     dataDefinitionNode *dataNode1, *dataNode2;

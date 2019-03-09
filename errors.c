@@ -44,7 +44,6 @@ void printParserError(parsedRow *pr) {
                     pr->rowMetadata.codeRowMetadata.oc.opCodeName);
             break;
         case INVALID_DATA_DEF_TYPE:
-
             printf(BOLD_WHITE_PRINT "Data declaration type '%s' doesn't exist!\n", pr->rowMetadata.dataRowMetadata.rawData);
             break;
         case SYMBOL_STARTS_WITH_NON_ALPHA:
@@ -100,6 +99,9 @@ void printParserError(parsedRow *pr) {
             break;
         case DUPLICATE_SYMBOL_DECLARATION:
             printf(BOLD_WHITE_PRINT "Symbol '%s' already declared - a symbol can only be declared once!\n", pr->symbolName);
+            break;
+        case INVALID_REGISTER_NAME:
+            printf(BOLD_WHITE_PRINT "Invalid register '%s'. Available registers are between @r0 and @r7 \n", pr->rowMetadata.codeRowMetadata.srcOperand);
             break;
         case UNKNOWN_ERROR:
             printf(BOLD_WHITE_PRINT "Encountered an unknown error...\n");

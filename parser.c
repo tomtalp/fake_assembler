@@ -5,8 +5,6 @@
 #include "utils.h"
 #include "parser.h"
 
-// #include "errors.h"
-
 char *LEGAL_REGISTERS[REGISTERS_COUNT] = {
     "@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"
 };
@@ -15,12 +13,6 @@ dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".data", DATA_TYPE},
     {".string", STRING_TYPE}
 };
-
-    // NO_OPERAND = 0,
-    // IMMEDIATE_MODE = 1,
-    // DIRECT_MODE = 3,
-    // REGISTER_MODE = 5
-
 
 opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
     {"mov", MOV},
@@ -216,7 +208,6 @@ int operandIsRegister(char *operand) {
     return 0;
 }
 
-// TODO - Handle negative numbers
 int operandIsNumber(char *operand) {
     int hasSign;
 
@@ -236,6 +227,40 @@ int operandIsNumber(char *operand) {
 }
 
 /*
+    Receive an operand, determine it's type and put it in the parsedRow object
+
+    @param parsedRow *pr - Pointer to the parsed row object we're working with
+    @param char *operand - The raw operand name extracted from the raw file row
+    @param int isSrcOperand - A flag indicating whether this is a source operand or not
+*/
+void setSingleOperandType(parsedRow *pr, char *operand, int isSrcOperand) {
+    int operandType;
+
+    if (*operand == '@') {
+        if (operandIsRegister(operand)) {
+            operandType = REGISTER_MODE;
+        } else {
+            pr->errorType = INVALID_REGISTER_NAME;
+            strcpy(pr->rowMetadata.codeRowMetadata.srcOperand, operand); /* Stick the faulty operand in the src operand as a convention, so we can print it later */
+            return;
+        }
+    } else if (operandIsNumber(operand)) {
+        operandType = IMMEDIATE_MODE;
+    } else {
+        operandType = DIRECT_MODE; /* Assuming the token exists. If it doesn't, we'll throw an exception later */
+    }
+
+    if (isSrcOperand) {
+        strcpy(pr->rowMetadata.codeRowMetadata.srcOperand, operand);
+        pr->rowMetadata.codeRowMetadata.srcOperandType = operandType;
+    } else {
+        strcpy(pr->rowMetadata.codeRowMetadata.destOperand, operand);
+        pr->rowMetadata.codeRowMetadata.destOperandType = operandType;
+    }
+
+}
+
+/*
     Evaluate the type of the two operands from the command
 
     @param parsedRow *pr - A pointer to the parsedRow object, which we'll use to set the operand types
@@ -249,38 +274,11 @@ void getOperandTypes(parsedRow *pr, char *firstOperand, char *secondOperand) {
         pr->rowMetadata.codeRowMetadata.destOperandType = NO_OPERAND;
 
     } else if (*firstOperand != '\0' && *secondOperand == '\0') { /* Only one operand (dest) */
-        strcpy(pr->rowMetadata.codeRowMetadata.destOperand, firstOperand);
-        if (operandIsRegister(firstOperand)) {
-            pr->rowMetadata.codeRowMetadata.destOperandType = REGISTER_MODE;
-        } else if (operandIsNumber(firstOperand)) {
-            pr->rowMetadata.codeRowMetadata.destOperandType = IMMEDIATE_MODE;
-        } else {
-            /* Assuming the token exists. If it doesn't, we'll throw an exception later */
-            pr->rowMetadata.codeRowMetadata.destOperandType = DIRECT_MODE;
-        }
+        setSingleOperandType(pr, firstOperand, 0);
 
     } else { /* Both operands are set */
-
-        strcpy(pr->rowMetadata.codeRowMetadata.srcOperand, firstOperand);
-        strcpy(pr->rowMetadata.codeRowMetadata.destOperand, secondOperand);
-
-        if (operandIsRegister(firstOperand)) {
-            pr->rowMetadata.codeRowMetadata.srcOperandType = REGISTER_MODE;
-        } else if (operandIsNumber(firstOperand)) {
-            pr->rowMetadata.codeRowMetadata.srcOperandType = IMMEDIATE_MODE;
-        } else {
-            /* Assuming the token exists. If it doesn't, we'll throw an exception later */
-            pr->rowMetadata.codeRowMetadata.srcOperandType = DIRECT_MODE;
-        }
-
-        if (operandIsRegister(secondOperand)) {
-            pr->rowMetadata.codeRowMetadata.destOperandType = REGISTER_MODE;
-        } else if (operandIsNumber(secondOperand)) {
-            pr->rowMetadata.codeRowMetadata.destOperandType = IMMEDIATE_MODE;
-        } else {
-            /* Assuming the token exists. If it doesn't, we'll throw an exception later */
-            pr->rowMetadata.codeRowMetadata.destOperandType = DIRECT_MODE;
-        }
+        setSingleOperandType(pr, firstOperand, 1);
+        setSingleOperandType(pr, secondOperand, 0);
     }
 }
 
@@ -356,10 +354,16 @@ void getCodeOperands(char *inputRow, parsedRow *pr) {
         inputRowStart++; 
     }
     *inputRow = '\0';
-
+    
     getOperandTypes(pr, firstOperand, secondOperand);
 }
 
+/*
+    Add raw data to a parsed row, after stripping quotes and ignoring redundant spaces
+
+    @param parsedRow *pr - The parsed row we're adding to
+    @param char *rawData - The string representing the raw data
+*/
 void addStringRawData(parsedRow *pr, char *rawData) {
     char strippedData[MAX_INSTRUCTION_LENGTH];
     int i;
@@ -559,13 +563,17 @@ void validateCodeOperands(parsedRow *pr) {
     }
 }
 
-void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
-    printf("1. Parsing '%s' from row number #%d\n", inputRow, rowNum);
-    pr->originalLineNum = rowNum;
-    pr->errorType = NO_ERROR; // Assume valid row until proven otherwise
-    trimLeadingWhitespace(inputRow);
+/*
+    Receive a raw input row, and turn into a parsed row object
 
-    printf("2. After initial whitespace trimming - '%s'\n", inputRow);
+    @param char *inputRow - The raw input row received from the file
+    @param parsedRow *pr - The pointer to the parsed row object we're editing
+    @param int rowNum - original row number from file
+*/
+void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
+    pr->originalLineNum = rowNum;
+    pr->errorType = NO_ERROR; /* Assume valid row until proven otherwise */
+    trimLeadingWhitespace(inputRow);
 
     pr->hasSymbol = isSymbolDefinition(inputRow);
     if (pr->hasSymbol) {
@@ -578,16 +586,12 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
         }
     }
 
-    printf("3. Left with '%s' after checking symbol\n", inputRow);
-
     getRowType(inputRow, pr);
     if (pr->errorType != NO_ERROR) {
         return;
     }
     
-    
     trimLeadingWhitespace(inputRow);
-    printf("4. After getting row type, we're left with - '%s'\n", inputRow);
 
     if (pr->rowType == DATA_DECLARATION) {
         if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
@@ -613,7 +617,6 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
                 return;
         }
 
-        printf("srcOperand = '%s', destOperand = '%s'\n", pr->rowMetadata.codeRowMetadata.srcOperand, pr->rowMetadata.codeRowMetadata.destOperand);
         validateCodeOperands(pr);
         if (pr->errorType != NO_ERROR) {
                 return;
@@ -630,12 +633,23 @@ void parseRow(char *inputRow, parsedRow *pr, int rowNum) {
     }
 }
 
+/*
+    Initialized a parsedRow linked list
+
+    @param parsedRowList *prList - The pointer to the list we're initializing
+*/
 void initParsedRowList(parsedRowList *prList) {
-    printf("inside initParsedRowList\n");
     prList->head = NULL;
     prList->parsedRowsCounter = 0;
 }
 
+/*
+    Add a parsedRow object into the parsedRow linked list
+    We're adding it in a sorted manner since the order of the rows is crucial
+
+    @param parsedRowList *prList - Pointer to the list we're adding to
+    @param parsedRow *pr - Pointer to the row we're adding
+*/
 void addParsedRowToList(parsedRowList *prList, parsedRow *pr) {
     parsedRowNode *newNode = (parsedRowNode*)malloc(sizeof(parsedRowNode));
     parsedRowNode *temp = (parsedRowNode*)malloc(sizeof(parsedRowNode));

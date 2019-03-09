@@ -318,6 +318,7 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable 
             if (pr->errorType != 0) {
                 printParserError(pr);
                 generalErrorFlag = 1;
+                continue;
 
             } else {
                 if (pr->rowType == DATA_DECLARATION) {
