@@ -88,7 +88,10 @@ void addToDataTable(symbolTable *symbTable, dataDefinitionsTable *dataTable, par
     printf("Adding stuff to data table!\n");
     
     if (pr->hasSymbol) {
-        addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, DATA_SYMBOL);
+        if (addNodeToSymbolTable(symbTable, pr->symbolName , dataTable->dataCounter, DATA_SYMBOL) == -1) {
+            pr->errorType = DUPLICATE_SYMBOL_DECLARATION;
+            return;
+        }
     }
 
     if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
@@ -152,7 +155,11 @@ void addToCodeTable(symbolTable *symbTable, codeInstructionsTable *codeTable, pa
     mainKeyWord->encodingType = ABSOLUTE_TYPE;
 
     if (pr->hasSymbol) {
-        addNodeToSymbolTable(symbTable, pr->symbolName, codeTable->instructionCount, INSTRUCTION_SYMBOL);
+        if (addNodeToSymbolTable(symbTable, pr->symbolName, codeTable->instructionCount, INSTRUCTION_SYMBOL) == -1) {
+            pr->errorType = DUPLICATE_SYMBOL_DECLARATION;
+            return;
+        }
+        
     }
 
     codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
@@ -281,11 +288,18 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable 
                 } else if (pr->rowType == CODE_INSTRUCTION) {
                     addToCodeTable(symbTable, codeTable, pr);
                 } else if (pr->rowType == EXTERNAL_DECLARATION) {
-                    addNodeToSymbolTable(symbTable, pr->rowMetadata.externRowMetadata.labelName, codeTable->instructionCount, EXTERNAL_SYMBOL);
-                } else { /* Entry delcaration */
-                    printf("Not handled now\n");
-                    // addNodeToSymbolTable(symbTable, pr->rowMetadata.entryRowMetadata.labelName, codeTable->instructionCount, ENTRY_SYMBOL);
+                    if (addNodeToSymbolTable(symbTable, pr->rowMetadata.externRowMetadata.labelName, codeTable->instructionCount, EXTERNAL_SYMBOL) == -1) {
+                        pr->errorType = DUPLICATE_SYMBOL_DECLARATION;
+                    }
+                } else { 
+                    /* Entry delcaration isn't handled in the first iteration */
+                    continue;
                 }
+            }
+
+            if (pr->errorType != 0) {
+                printParserError(pr);
+                generalErrorFlag = 1;
             }
 
         }
@@ -307,15 +321,12 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable 
     @param codeInstructionsTable *codeTable - A pointer to the code table
 */
 void addDataToCodeTable(dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable) {
-    dataDefinitionNode *temp = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
-    temp = dataTable->head;
+    dataDefinitionNode *temp = dataTable->head;
 
     while (temp != NULL) {
-    //     // printf("%s\n", temp->binaryData);
         codeTable->rows[codeTable->instructionCount] = malloc((MAX_KEYWORD_BINARY_LENGTH + 1) * sizeof(char));
         
         memcpy(codeTable->rows[codeTable->instructionCount], temp->binaryData, MAX_KEYWORD_BINARY_LENGTH);
-    //     // memcpy(codeTable->rows[codeTable->instructionCount], "123456789000", MAX_KEYWORD_BINARY_LENGTH);
         *(codeTable->rows[codeTable->instructionCount] + MAX_KEYWORD_BINARY_LENGTH) = '\0';
         codeTable->instructionCount++;
 
@@ -323,44 +334,95 @@ void addDataToCodeTable(dataDefinitionsTable *dataTable, codeInstructionsTable *
     }
 }
 
-int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
-    int i, relocMemAddressFromSymbTable;
+/*
+    Iterate over the relocationTable, which contains data for labels that need to be given
+    a value from the symbol table. If we locate a label in the symbol table, we plant the
+    value from the symbol table in the code table
+
+    If a label doesn't exist, we throw an error
+
+    @param symbolTable *symbTable - Used to access the relocation table & symbol table
+    @param codeInstructionsTable *codeTable - The code table which will be used to plant the new data
+*/
+int relocateSymbolAddresses(symbolTable *symbTable, codeInstructionsTable *codeTable) {
     relocationTableNode *temp = symbTable->relocTable->head;
-    parsedRowNode *prNode = prList->head;
     symbolTableNode *symbTableNode;
-    int generalErrorFlag = 0;
+    int errorFlag = 0;
 
-    addDataToCodeTable(dataTable, codeTable);
-
-    for(i = 0; i < symbTable->relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
-        printf("Working on %s (%d) \n", temp->symbolName, temp->memAddress);
+    while (temp != NULL) {
         symbTableNode = fetchFromSymbTableByName(symbTable, temp->symbolName);
+        
         if (symbTableNode == NULL ) {
-            printf("Error! Symbol %s doesn't exist\n", temp->symbolName);
+            printSymbolDoesntExist(temp->symbolName);
+            errorFlag = 1;
         } else {
-            if (symbTableNode->symbolType == EXTERNAL_SYMBOL) {
+            if (symbTableNode->symbolType == EXTERNAL_SYMBOL) { /* No data for external symbols, only an external type flag*/
                 castIntToBinaryString(0, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
                 addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], EXTERNAL_TYPE);
-            } else {
+            } else { /* Change the value in the code table to the data from the symbol table */
                 castIntToBinaryString(symbTableNode->memoryAddress, codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], CODE_INSTRUCTION_KEYWORD_DATA_SIZE);
                 addEncodingTypeToBinaryKeyword(codeTable->rows[temp->memAddress - BASE_MEM_ADDRESS], RELOCATABLE_TYPE);
             }
         }
+        temp = temp->next;
     }
 
+    return errorFlag;
+}
+
+/*
+    Iterate over the list of previously parsed rows, and look for variables that were declared as .entry
+    and for every one of them, set their "entry" flag in the symbol table
+
+    @param parsedRowList *prList - The list of parsed rows
+    @param symbolTable *symbTable - The symbol table used to set entry declarations
+*/
+int setEntrySymbols(parsedRowList *prList, symbolTable *symbTable) {
+    symbolTableNode *symbTableNode;
+    int errorFlag = 0;
+    parsedRowNode *prNode = prList->head;
+
     while (prNode != NULL) {
-        if(prNode->pr.rowType == ENTRY_DECLARATION) {
+        if (prNode->pr.rowType == ENTRY_DECLARATION) {
             symbTableNode = fetchFromSymbTableByName(symbTable, prNode->pr.rowMetadata.entryRowMetadata.labelName);
+            
             if (symbTableNode == NULL) {
                 printEntryDoesntExist(&prNode->pr);
-                generalErrorFlag = 1;
+                errorFlag = 1;
             } else {
                 symbTableNode->symbolType = ENTRY_DECLARATION;
             }
         }
+        
         prNode = prNode->next;
     }
 
+    return errorFlag;
+}
+
+/*
+    Second iteration of the assembler
+    
+    Go over the parsed rows & our tables once again and - 
+    1. Set symbols as entries, if necessary
+    2. Append data section after code section
+    3. Plant the symbols in the code table, after retrieving all symbols
+    4. Validate that no symbol was declared twice
+
+    @param char *fileName - The original filename we're working with
+    @param symbolTable *symbTable - The symbols table
+    @param dataDefinitionsTable *dataTable - The data table, containing all the data definitions we found in the first iteartion
+    @param codeInstructionsTable *codeTable - The partial code table that was built in the first iteration
+    @param parsedRowList *prList - The list of parsedRows, built in the first iteration
+*/
+int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
+    int i, relocMemAddressFromSymbTable;
+    
+    
+    int generalErrorFlag = 0;
+    addDataToCodeTable(dataTable, codeTable);
+    generalErrorFlag = relocateSymbolAddresses(symbTable, codeTable);
+    generalErrorFlag = setEntrySymbols(prList, symbTable);
 
     return generalErrorFlag;
 

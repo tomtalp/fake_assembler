@@ -27,6 +27,13 @@ void printEntryDoesntExist(parsedRow *pr) {
     printf(RESET_PRINT);
 }
 
+void printSymbolDoesntExist(char *symbolName) {
+    printf(BOLD_RED_PRINT "Error - ");
+    printf(RESET_PRINT);
+    printf(BOLD_WHITE_PRINT " label %s was used, but no declaration found!\n", symbolName);
+    printf(RESET_PRINT);
+}
+
 void printParserError(parsedRow *pr) {
     printf(BOLD_RED_PRINT "Error %s:%d - ", pr->fileName, pr->originalLineNum);
     printf(RESET_PRINT);
@@ -90,6 +97,9 @@ void printParserError(parsedRow *pr) {
             break;
         case EXTRANEOUS_TEXT_AFTER_EXTERN_ENTRY:
             printf(BOLD_WHITE_PRINT ".entry / .extern declarations can only have a single symbol name\n");
+            break;
+        case DUPLICATE_SYMBOL_DECLARATION:
+            printf(BOLD_WHITE_PRINT "Symbol '%s' already declared - a symbol can only be declared once!\n", pr->symbolName);
             break;
         case UNKNOWN_ERROR:
             printf(BOLD_WHITE_PRINT "Encountered an unknown error...\n");

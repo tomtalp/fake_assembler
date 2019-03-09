@@ -20,19 +20,22 @@ void printSymbolTable(symbolTable *tb) {
     printf("Symbol Table has %d rows\n", tb->symbolsCounter);
     // for(i = 1; temp ; temp = temp->next, i++)  {   
     for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {   
-        printf("Symbol table row #%d = name = %s, addr = %d\n", i+1, temp->symbolName, temp->memoryAddress);
+        printf("Symbol table row #%d = name = %s, addr = %d", i+1, temp->symbolName, temp->memoryAddress);
+
+        printf("\n");
     }
 }
 
 /*
-    Add a new node to our symbol table
+    Add a new node to our symbol table.
+    If the record already exists in our symbol table, return -1.
 
     @param symbolTable *tb - A pointer to the symbol table we're working with
     @param char *symbolName - The name of the symbol
     @param int memAddress - The memory address for the given symbol
     @param enum SYMBOL_TYPES symbolType - A flag indicating what kind of symbol we're adding
 */
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType) {
+int addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType) {
     symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
 
@@ -45,17 +48,22 @@ void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enu
     if (tb->symbolsCounter == 0) { /* Handle empty list */
         tb->head = newNode;
         tb->symbolsCounter += 1;
-        return;
+        return 0;
     }
 
     temp = tb->head;
 
-    while (temp->next) { /* Go to end of list */
+    while (temp->next) { /* Go to end of list, while looking for a duplicate node */
+        if (strcmp(temp->symbolName, symbolName) == 0) {
+            return -1;
+        }
         temp = temp->next;
     }
 
     temp->next = newNode;
-    tb->symbolsCounter += 1;    
+    tb->symbolsCounter += 1;  
+
+    return 0;  
 }
 
 /*
@@ -159,16 +167,22 @@ void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instruc
     }
 }
 
+/*
+    Return a symbolTableNode pointer from a given symbol name.
+    If symbol name isn't found, return null!
 
+    @param symbolTable *tb - The symbol table we're working with
+    @param char *symbolName - The name of the symbol that needs to be located
+*/
 symbolTableNode *fetchFromSymbTableByName(symbolTable *tb, char *symbolName) {
-    int i;
     symbolTableNode *temp = tb->head;
 
-    for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {  
+    while (temp != NULL) {
         if (strcmp(temp->symbolName, symbolName) == 0) {
-            // return temp->memoryAddress;
             return temp;
         }
+        temp = temp->next;
     }
+
     return NULL;
 }

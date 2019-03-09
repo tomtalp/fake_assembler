@@ -42,8 +42,8 @@ int run(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable,
     printf("Data table after first iteration - \n");
     printDataTable(dataTable);
 
-    // printf("Symbol table after first iteration - \n");
-    // printSymbolTable(symbTable);
+    printf("Symbol table after first iteration - \n");
+    printSymbolTable(symbTable);
 
     // printf("Code table after first iteration - \n");
     // printCodeTable(codeTable);

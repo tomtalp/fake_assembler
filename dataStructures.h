@@ -189,6 +189,7 @@ typedef enum {
     NO_TEXT_AFTER_COMMA,
     EXTRANEOS_TEXT_AFTER_OPERANDS,
     EXTRANEOUS_TEXT_AFTER_EXTERN_ENTRY,
+    DUPLICATE_SYMBOL_DECLARATION,
     UNKNOWN_ERROR,
 } ERROR_TYPES;
 
@@ -219,7 +220,7 @@ typedef struct parsedRowList {
 
 void initSymbolTable(symbolTable *symbTable);
 void printSymbolTable(symbolTable *tb);
-void addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType);
+int addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType);
 void initDataTable(dataDefinitionsTable *dataTable);
 void addNodeToDataTable(dataDefinitionsTable *tb, int num);
 void printDataTable(dataDefinitionsTable *dataTable);
