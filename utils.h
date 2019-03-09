@@ -13,6 +13,6 @@ int isCommentRow(char *inputRow);
 int strToInt(char *str);
 void memKeywordToBinaryString(memKeyword *mem, char *binaryStr);
 void getFileNameWithExtension(char *fileName, char *fileNameWithExtension);
-// void keywordToBase64(char *keyword, char *base64Keyword);
+void keywordToBase64(char *keyword, char *base64Keyword);
 
 #endif

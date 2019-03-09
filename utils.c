@@ -4,12 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-// char base64Constants[] = { 
-//     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
-//     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
-//     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
-//     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
-//     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
+static const char base64Constants[] = { 
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
+
 /*
     Trim all leading whitespaces in the received source string. This function modifies the original string!
 
@@ -97,7 +98,6 @@ int isCommentRow(char *inputRow) {
     return *inputRow == ';';
 }
 
-// TODO - handle negative numbers
 int strToInt(char *str) {
     return atoi(str);
 }
@@ -129,21 +129,40 @@ void getFileNameWithExtension(char *fileName, char *fileNameWithExtension) {
     strcat(fileNameWithExtension, ASSEMBLER_FILE_EXTENSION);
 }
 
-// void keywordToBase64(char *keyword, char *base64Keyword) {
-//     int i;
-//     char firstKeyWordSlice[MAX_KEYWORD_BINARY_LENGTH/2];
-//     char secondKeyWordSlice[MAX_KEYWORD_BINARY_LENGTH/2];
+void keywordToBase64(char *keyword, char *base64Keyword) {
+    // printf("KW = '%s'\n", keyword);
+    int i;
+    char firstKeyWordSlice[(MAX_KEYWORD_BINARY_LENGTH/2) + 1];
+    char secondKeyWordSlice[(MAX_KEYWORD_BINARY_LENGTH/2) + 1];
 
-//     for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH; i++) {
-//         if (i < MAX_KEYWORD_BINARY_LENGTH/2) {
-//             firstKeyWordSlice[i] = keyword[i];
-//         } else {
-//             secondKeyWordSlice[i - MAX_KEYWORD_BINARY_LENGTH/2] = keyword[i];
-//         }
-//     }
+    int firstKeyWordNum, secondKeyWordNum;
+    // printf("SIZEOF firstKWSLICE = %d\n", (MAX_KEYWORD_BINARY_LENGTH/2) + 1);
+    for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH/2; i++) {
+        // printf("i = %d, keyword[%d] = %c\n", i, i, keyword[i]);
+        firstKeyWordSlice[i] = keyword[i];
+        // printf("firstKeyWordSlice[%d] = %c\n", i, firstKeyWordSlice[i]);
+    }
+    // printf("Setting terminator for %d\n", i);
+    firstKeyWordSlice[i] = '\0';
+    // printf("FINISHED WITH firstKWSLICE\n");
 
-//     printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s'\n", keyword, firstKeyWordSlice, secondKeyWordSlice);
-// }
+    for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH/2; i++) {
+        // printf("i = %d, keyword[%d] = %c\n", i, (MAX_KEYWORD_BINARY_LENGTH/2) + i, keyword[(MAX_KEYWORD_BINARY_LENGTH/2) + i]);
+        secondKeyWordSlice[i] = keyword[(MAX_KEYWORD_BINARY_LENGTH/2) + i];
+        // printf("secondKeyWordSlice[%d] = %c\n", i, secondKeyWordSlice[i]);
+    }
+    secondKeyWordSlice[i] = '\0';
+
+    firstKeyWordNum = strtol(firstKeyWordSlice, NULL, 2);
+    secondKeyWordNum = strtol(secondKeyWordSlice, NULL, 2);
+
+    base64Keyword[0] = base64Constants[firstKeyWordNum];
+    base64Keyword[1] = base64Constants[secondKeyWordNum];
+
+    // printf("keyword = '%s', firstKeyWordSlice = '%s', secondKeyWordSlice = '%s' \n", keyword, firstKeyWordSlice, secondKeyWordSlice);
+    printf("%s\n", base64Keyword);
+    // printf("#######################################\n");
+}
 
 // void dumpCode(codeInstructionsTable *codeTable, char *outputFileName) {
 //     int i;

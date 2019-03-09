@@ -39,13 +39,36 @@ int run(char *fileName, symbolTable *symbTable, dataDefinitionsTables *dataTable
         return 1;
     }
 
-    errorFlag = secondIteration(fileName, symbTable, dataTable, codeTable, rowsList);;
+    printf("Data table before first iteration - \n");
+    printDataTable(dataTable);
+
+    printf("Data table after first iteration - \n");
+    printDataTable(dataTable);
+
+    printf("Symbol table after first iteration - \n");
+    printSymbolTable(symbTable);
+
+    printf("Code table after first iteration - \n");
+    printCodeTable(codeTable);
+
+    printf("######################################\n");
+    printParsedRowsList(rowsList);
+
+    printf("######################################\n");
+    printf("RELOC TABLE - \n");
+    printRelocTable(symbTable->relocTable);
+
+    errorFlag = secondIteration(symbTable, dataTable, codeTable, rowsList);
+
+    printf("Code table after second iteration - \n");
+    printCodeTable(codeTable);
 
     return errorFlag;
 }
 
 
 int main(int argc, char *argv[]) {
+    int i;
     parsedRowList rowsList;
     symbolTable symbTable;
     dataDefinitionsTables dataTable;
@@ -57,7 +80,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    for (int i=1; i < argc; i++) {
+    for (i=1; i < argc; i++) {
         printf("Woring on '%s'\n", argv[i]);
         initSymbolTable(&symbTable);
         initParsedRowList(&rowsList);
@@ -68,31 +91,11 @@ int main(int argc, char *argv[]) {
             continue;
         }
     }
+
+    printf("#############################################################\n");
+    char yo[2];
+    for (i = 0; i < codeTable.instructionCount; i++) {
+        keywordToBase64(codeTable.rows[i], yo);
+    }
     
-
-    
-
-    // printf("Data table before first iteration - \n");
-    // printDataTable(&dataTable);
-
-    // printf("Data table after first iteration - \n");
-    // printDataTable(&dataTable);
-
-    // printf("Symbol table after first iteration - \n");
-    // printSymbolTable(&symbTable);
-
-    // printf("Code table after first iteration - \n");
-    // printCodeTable(&codeTable);
-
-    // printf("######################################\n");
-    // printParsedRowsList(&rowsList);
-
-    // printf("######################################\n");
-    // printf("RELOC TABLE - \n");
-    // printRelocTable(symbTable.relocTable);
-
-    // secondIteration(&symbTable, &dataTable, &codeTable, &rowsList);
-    // printf("Code table after first iteration - \n");
-    // printCodeTable(&codeTable);
-
 }
