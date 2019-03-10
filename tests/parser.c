@@ -6,18 +6,11 @@
 #include "../parser.h"
 #include "../errors.h"
 
-#define RED_PRINT          "\033[31m"           /* Red format*/
-#define GREEN_PRINT        "\033[32m"           /* GREEN format*/
-#define RESET_PRINT        "\033[0m"            /* Normal string format print */
-#define BOLD_RED_PRINT     "\033[1m\033[31m"    /* Bold Red format */
-#define BOLD_WHITE_PRINT   "\033[1m\033[37m"    /* Bold White */
-#define BOLD_GREEN_PRINT   "\033[1m\033[32m"    /* Bold green */
-
 /*
  Utility function for nicely printing asserts
 */
 void logAssert(char *functionName, char *input){
-    printf(GREEN_PRINT "       # Testing %s(\"%s\")\n", functionName, input);
+    printf(BOLD_GREEN_PRINT "       # Testing %s(\"%s\")\n", functionName, input);
     printf(RESET_PRINT);
 }
 
@@ -25,7 +18,7 @@ void logAssert(char *functionName, char *input){
  Utility function for nicely printing assert results
 */
 void logResult(char *functionName, char *input, int expectation){
-    printf(BOLD_GREEN_PRINT "           # Test passed for %s(\"%s\") == %d\n", functionName, input, expectation);
+    printf(GREEN_PRINT "           # Test passed for %s(\"%s\") == %d\n", functionName, input, expectation);
     printf(RESET_PRINT);
 }
 
@@ -100,7 +93,27 @@ void testGetCodeOperands(parsedRow *pr, char *instructionArgs, int expectedResul
     
     logResult("validateSymbolName", instructionArgsCopy, expectedResult);
     pr->errorType = NO_ERROR; /* reset pr state */
-    strcpy(pr->symbolName, "");
+}
+
+/*
+    Test getExternEntryDeclaration()
+*/
+void testGetExternEntryDeclaration(parsedRow *pr, char *instructionArgs, int expectedResult) {
+    char instructionArgsCopy[MAX_INSTRUCTION_LENGTH];
+    strcpy(instructionArgsCopy, instructionArgs);
+
+    getExternEntryDeclaration(pr, instructionArgs);
+
+    logAssert("getExternDeclaration", instructionArgsCopy);
+    if (expectedResult == 0) {
+        assert(pr->errorType == 0);
+    } else {
+        assert(pr->errorType != 0);
+        printParserError(pr);
+    }
+    
+    logResult("getExternDeclaration", instructionArgsCopy, expectedResult);
+    pr->errorType = NO_ERROR; /* reset pr state */
 }
 
 int main() {
@@ -123,6 +136,8 @@ int main() {
     testDataDeclaration(pr, "1 3 5", 1);
     testDataDeclaration(pr, "1 ,        3", 0);
     testDataDeclaration(pr, "1 ,        3   ", 0);
+    testDataDeclaration(pr, "1, 3, 5,   7 a", 1);
+    testDataDeclaration(pr, "tom", 1);
 
     printf(BOLD_GREEN_PRINT "   ### 2. validateStringDataDeclaration() \n");
     printf(RESET_PRINT);
@@ -174,6 +189,17 @@ int main() {
     strcpy(instruction, "@r1, @r2 @r3");
     testGetCodeOperands(pr, instruction, 1);
 
+    printf(BOLD_GREEN_PRINT "   ### 5. testGetExternEntryDeclaration() \n");
+    printf(RESET_PRINT);
+
+    char externVarName[MAX_INSTRUCTION_LENGTH] = "ABC";
+    testGetExternEntryDeclaration(pr, externVarName, 0);
+
+    strcpy(externVarName, "ABC DEFG");
+    testGetExternEntryDeclaration(pr, externVarName, 1);
+    
+    strcpy(externVarName, "ABC          ");
+    testGetExternEntryDeclaration(pr, externVarName, 0);
 
     printf(BOLD_GREEN_PRINT "##### ALL TESTS PASSED! ##### \n");
     printf(RESET_PRINT);
