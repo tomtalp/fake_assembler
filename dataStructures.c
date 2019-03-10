@@ -24,7 +24,7 @@ void printSymbolTable(symbolTable *tb) {
     symbolTableNode *temp = tb->head;
 
     printf("Symbol Table has %d rows\n", tb->symbolsCounter);
-    // for(i = 1; temp ; temp = temp->next, i++)  {   
+
     for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {   
         printf("Symbol table row #%d = name = %s, addr = %d", i+1, temp->symbolName, temp->memoryAddress);
 

@@ -164,7 +164,6 @@ void getRowType(char *inputRow, parsedRow *pr) {
     if (!detectedRowType) {
         for (i = 0; i < OP_CODES_COUNT; i++) {
             if (strcmp(firstKeyword, LEGAL_OP_CODES[i].opCodeName) == 0) {
-                printf("Detected code instruction with opcode %s with num %d\n", LEGAL_OP_CODES[i].opCodeName, LEGAL_OP_CODES[i].opCodeNum);
                 pr->rowType = CODE_INSTRUCTION;
                 pr->rowMetadata.codeRowMetadata.oc.opCodeName = LEGAL_OP_CODES[i].opCodeName;
                 pr->rowMetadata.codeRowMetadata.oc.opCodeNum = LEGAL_OP_CODES[i].opCodeNum;
@@ -193,7 +192,6 @@ int operandIsRegister(char *operand) {
     int i;
 
     for (i = 0; i < REGISTERS_COUNT; i++) {
-        // if (strcmp(operand, LEGAL_REGISTERS[i].keyword) == 0) {
         if (strcmp(operand, LEGAL_REGISTERS[i]) == 0) {
             return 1;
         }
@@ -208,10 +206,7 @@ int operandIsRegister(char *operand) {
     @ return int - 0 for false, 1 for true
 */
 int operandIsNumber(char *operand) {
-    int hasSign;
-
     if (*operand == '+' || *operand == '-') {
-        hasSign = 1;
         operand++;
     }
 
@@ -429,7 +424,6 @@ void validateStringDataDeclaration(parsedRow *pr, char *rawData) {
     @param char *rawData - String containing the expected external/entry declaration
 */
 void getExternEntryDeclaration(parsedRow *pr, char *rawData) {
-    int hasExtraneousText = 0;
     int i = 0;
 
     while (*rawData != '\0' && !isspace(*rawData) && i < MAX_INSTRUCTION_LENGTH) {
@@ -467,8 +461,6 @@ void getExternEntryDeclaration(parsedRow *pr, char *rawData) {
 
 */
 void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
-    int isNumberFlag = 0;
-    int whiteSpaceFlag = 0;
     int commaFlag = 0;
     int positivitySignFlag = 0;
 
@@ -492,7 +484,6 @@ void validateIntDataDeclaration(parsedRow *pr, char *rawData) {
                 return;
             }
             commaFlag = 1;
-            isNumberFlag = 0;
             positivitySignFlag = 0;
         } else if ((*rawData == '-'  || *rawData == '+' )) {
             if (isdigit(*(rawData-1)) || !isdigit(*(rawData+1)) || positivitySignFlag) { /* After a sign we must see a number, and we can't have multiple signs for a number*/

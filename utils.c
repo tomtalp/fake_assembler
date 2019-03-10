@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Hardcoded base-64 constants. Each character has the numeric value of it's poisition */
 static const char base64Constants[] = { 
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
@@ -64,11 +65,8 @@ char getBinaryChar(int mask, int value, int isNegative) {
     @param int sizeOfBinaryKeyword - The amount of bits we have available
 */
 void castIntToBinaryString(int n, char *binaryStr, int sizeOfBinaryKeyword) {
-    char *copy = binaryStr;
     int isNegative = n < 0 ? 1 : 0;
-    int mask, i;
-
-    i = 0;
+    int mask;
 
     if (isNegative) { /* Handle negative numbers - For two's compliment we need to flip the number and add +1. We'll add before flipping since it makes it easier (And the results are the same!) */
         n += 1;
@@ -93,34 +91,50 @@ int isEmptyRow(char *inputRow) {
     return 1;
 }
 
+/*
+    Check if a row is a comment, and needs to be ignored
+
+    @param char *inputRow - The raw row string from the file
+    @return int - flag representing whether the first character of the row is ';'
+*/
 int isCommentRow(char *inputRow) {
     trimLeadingWhitespace(inputRow);
     return *inputRow == ';';
 }
 
+/*
+    Convert a string to int, with atoi
+
+    @param char *str - The string to convert
+    @return int - The converted number
+*/
 int strToInt(char *str) {
     return atoi(str);
 }
 
+/*
+    Create a binary string from our  memKeyword (The keyword holds main code instructions)
+    We're converting based on bit fields - each member in the memKeyword has it's designated 
+    bit fields, so we take them from the memKeyword and put them in the binary string
+
+    @param memKeyword *mem - Pointer to the memKeyword which has the data we want to convert
+    @param char *binaryStr - The destination for our binary string
+*/
 void memKeywordToBinaryString(memKeyword *mem, char *binaryStr) {
     /* Convert source addressing mode */
     castIntToBinaryString(mem->sourceAddressingMode, binaryStr, KEYWORD_ADDRESSING_MODE_BITS);
-    printf("mem->sourceAddressingMode = %d\n", mem->sourceAddressingMode);
     binaryStr = binaryStr + KEYWORD_ADDRESSING_MODE_BITS;
 
     /* Convert op code */
     castIntToBinaryString(mem->opCode, binaryStr, KEYWORD_OP_CODE_BITS);
-    printf("mem->opCode = %d\n", mem->opCode);
     binaryStr = binaryStr + KEYWORD_OP_CODE_BITS;
 
     /* Convert dest addressing mode*/
     castIntToBinaryString(mem->destAddressingMode, binaryStr, KEYWORD_ADDRESSING_MODE_BITS);
-    printf("mem->destAddressingMode = %d\n", mem->destAddressingMode);
     binaryStr = binaryStr + KEYWORD_ADDRESSING_MODE_BITS;
 
     /* Convert encoding type */
     castIntToBinaryString(mem->encodingType, binaryStr, KEYWORD_ENCODING_TYPE_BITS);
-    printf("mem->encodingType = %d\n", mem->encodingType);
     binaryStr = binaryStr + KEYWORD_ENCODING_TYPE_BITS;
 }
 
@@ -136,36 +150,38 @@ void appendExtensionToFilename(char *fileName, char *output, char *extension) {
     strcat(output, extension);
 }
 
+/* 
+    Convert a string with binary data into a base64 keyword - Each half of the string's numeric
+    value is converted into a base64 character
+
+    @param char *keyword - The raw binary string
+    @param char *base64Keyword - Destination for the converted base64 keyword    
+*/
 void binaryKeywordToBase64(char *keyword, char *base64Keyword) {
-    // printf("KW = '%s'\n", keyword);
     int i;
     char firstKeyWordSlice[(MAX_KEYWORD_BINARY_LENGTH/2) + 1];
     char secondKeyWordSlice[(MAX_KEYWORD_BINARY_LENGTH/2) + 1];
 
     int firstKeyWordNum, secondKeyWordNum;
-    // printf("SIZEOF firstKWSLICE = %d\n", (MAX_KEYWORD_BINARY_LENGTH/2) + 1);
-    for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH/2; i++) {
-        // printf("i = %d, keyword[%d] = %c\n", i, i, keyword[i]);
-        firstKeyWordSlice[i] = keyword[i];
-        // printf("firstKeyWordSlice[%d] = %c\n", i, firstKeyWordSlice[i]);
-    }
-    // printf("Setting terminator for %d\n", i);
-    firstKeyWordSlice[i] = '\0';
-    // printf("FINISHED WITH firstKWSLICE\n");
 
     for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH/2; i++) {
-        // printf("i = %d, keyword[%d] = %c\n", i, (MAX_KEYWORD_BINARY_LENGTH/2) + i, keyword[(MAX_KEYWORD_BINARY_LENGTH/2) + i]);
+        firstKeyWordSlice[i] = keyword[i];
+    }
+    
+    firstKeyWordSlice[i] = '\0';
+    
+
+    for (i = 0; i < MAX_KEYWORD_BINARY_LENGTH/2; i++) {
         secondKeyWordSlice[i] = keyword[(MAX_KEYWORD_BINARY_LENGTH/2) + i];
-        // printf("secondKeyWordSlice[%d] = %c\n", i, secondKeyWordSlice[i]);
     }
     secondKeyWordSlice[i] = '\0';
 
     firstKeyWordNum = strtol(firstKeyWordSlice, NULL, 2);
     secondKeyWordNum = strtol(secondKeyWordSlice, NULL, 2);
 
-    base64Keyword[0] = base64Constants[firstKeyWordNum];
-    base64Keyword[1] = base64Constants[secondKeyWordNum];
-    base64Keyword[2] = '\0';
+    base64Keyword[0] = base64Constants[firstKeyWordNum]; /* First part of the b64 keyword is the first half*/
+    base64Keyword[1] = base64Constants[secondKeyWordNum]; /* Second part of the b64 keyword is the second half*/
+    base64Keyword[2] = '\0'; /* Terminate */
 }
 
 /*
@@ -188,6 +204,7 @@ void dumpCode(codeInstructionsTable *codeTable, char *baseFileName, int dataCoun
 
     fprintf(fp, "%d %d\n", codeTable->instructionCount - dataCount, dataCount); /* Subtract DC from IC, which was added previously in the 2nd iteration */
 
+    /* Write every row in base 64 */
     for (i = 0; i < codeTable->instructionCount; i++) {
         binaryKeywordToBase64(codeTable->rows[i], keywordInBase64);
         fprintf(fp, "%s\n", keywordInBase64);
@@ -251,7 +268,12 @@ void dumpEntryExternData(symbolTable *symbTable, char *baseFileName) {
 }
 
 /*
+    Go over all our data structures, and free the allocated memory
 
+    @param symbolTable *symbTable - The symbols table
+    @param dataDefinitionsTable *dataTable - The data table
+    @param codeInstructionsTable *codeTable - The code instruction table
+    @param parsedRowList *prList - The list of parsedRows
 */
 void freeData(symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
     symbolTableNode *symbNode1, *symbNode2;

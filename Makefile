@@ -2,7 +2,7 @@ all: build
 clean:
 	rm *.out *.ob *.ext *.ent
 build: 
-	gcc main.c parser.c dataStructures.c assembler.c utils.c errors.c  -o a.out
+	gcc -Wall -ansi -pedantic main.c parser.c dataStructures.c assembler.c utils.c errors.c  -o assembler.out
 debug:
 	gcc -g main.c parser.c dataStructures.c assembler.c utils.c -o a.out
 test:

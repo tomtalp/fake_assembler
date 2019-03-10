@@ -24,7 +24,7 @@ void addDataTypeToDataTable(dataDefinitionsTable *dataTable, parsedRow *pr) {
     i = 0;
 
     /* Iterate over the entire raw string. Each for-loop iteration is considered a new number parsing */
-    for (i = 0; i < MAX_INSTRUCTION_LENGTH, pr->rowMetadata.dataRowMetadata.rawData[i] != 0;) {
+    for (i = 0; i < MAX_INSTRUCTION_LENGTH && pr->rowMetadata.dataRowMetadata.rawData[i] != 0;) {
         num = 0;
         isNegative = 0;
 
@@ -64,7 +64,7 @@ void addDataTypeToDataTable(dataDefinitionsTable *dataTable, parsedRow *pr) {
     @param parsedRow *pr - The row we're working with, containing the data to be parsed
 */
 void addStringTypeToDataTable(dataDefinitionsTable *dataTable, parsedRow *pr) {
-    int num, i, asciiVal;
+    int i, asciiVal;
 
     i = 0;
     
@@ -293,6 +293,7 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable 
     char inputRow[MAX_INSTRUCTION_LENGTH];
     int generalErrorFlag = 0;
     int rowNum = 0;
+    parsedRow *pr;
 
     appendExtensionToFilename(fileName, fileNameWithExtension, ASSEMBLY_FILE_EXTENSION);
 
@@ -308,7 +309,7 @@ int firstIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable 
                 continue;
             }
 
-            parsedRow *pr = (parsedRow*)malloc(sizeof(parsedRow));
+            pr = (parsedRow*)malloc(sizeof(parsedRow));
             
             strcpy(pr->fileName, fileName);
             parseRow(inputRow, pr, rowNum);
@@ -451,9 +452,6 @@ int setEntrySymbols(parsedRowList *prList, symbolTable *symbTable) {
     @param parsedRowList *prList - The list of parsedRows, built in the first iteration
 */
 int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList) {
-    int i, relocMemAddressFromSymbTable;
-    
-    
     int generalErrorFlag = 0;
     addDataToCodeTable(dataTable, codeTable);
     generalErrorFlag = relocateSymbolAddresses(symbTable, codeTable);

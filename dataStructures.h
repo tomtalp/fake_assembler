@@ -55,7 +55,6 @@ typedef struct memKeywordBinaryString{
 /* The code instructions section - contains the actual code instructions  */
 typedef struct codeInstructionsTable {
     int instructionCount;
-    // memKeywordBinaryString *rows[MAX_INSTRUCTIONS];
     char *rows[MAX_INSTRUCTIONS];
 } codeInstructionsTable;
 
@@ -198,7 +197,7 @@ typedef enum {
     EXTRANEOS_TEXT_AFTER_OPERANDS,
     EXTRANEOUS_TEXT_AFTER_EXTERN_ENTRY,
     DUPLICATE_SYMBOL_DECLARATION,
-    UNKNOWN_ERROR,
+    UNKNOWN_ERROR
 } ERROR_TYPES;
 
 /* 
