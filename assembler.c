@@ -465,3 +465,27 @@ int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable
     return generalErrorFlag;
 
 }
+
+/*
+    Run the first and second iteration, and return an indication whether we failed or succeeded
+
+    @param char *fileName - The original filename we're working with
+    @param symbolTable *symbTable - The symbols table
+    @param dataDefinitionsTable *dataTable - The data table
+    @param codeInstructionsTable *codeTable - The instructions code table
+    @param parsedRowList *prList - The list of parsedRows
+
+    @return int - A flag indicating if we found errors (0=False, 1=True)
+*/
+int run(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *rowsList) {
+    int errorFlag;
+    errorFlag = firstIteration(fileName, symbTable, dataTable, codeTable, rowsList);
+
+    if (errorFlag) {
+        return 1;
+    }
+
+    errorFlag = secondIteration(fileName, symbTable, dataTable, codeTable, rowsList);
+
+    return errorFlag;
+}

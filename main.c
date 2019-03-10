@@ -4,38 +4,6 @@
 #include "errors.h"
 #include "utils.h"
 
-int run(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *rowsList) {
-    int errorFlag;
-    errorFlag = firstIteration(fileName, symbTable, dataTable, codeTable, rowsList);
-
-    if (errorFlag) {
-        return 1;
-    }
-
-    /* printf("Data table after first iteration - \n");
-    printDataTable(dataTable);
-
-    printf("Symbol table after first iteration - \n");
-    printSymbolTable(symbTable);
-
-    printf("Code table after first iteration - \n");
-    printCodeTable(codeTable);
-
-    printf("######################################\n");
-    printParsedRowsList(rowsList);
-
-    printf("######################################\n");
-    printf("RELOC TABLE - \n");
-    printRelocTable(symbTable->relocTable); */
-
-    errorFlag = secondIteration(fileName, symbTable, dataTable, codeTable, rowsList);
-    /*printf("Code table after second iteration - \n");
-    printCodeTable(codeTable);*/
-
-    return errorFlag;
-}
-
-
 int main(int argc, char *argv[]) {
     int i;
     parsedRowList rowsList;
@@ -50,7 +18,7 @@ int main(int argc, char *argv[]) {
     }
 
     for (i=1; i < argc; i++) {
-        printf("Woring on '%s'\n", argv[i]);
+        printf(BOLD_WHITE_PRINT "Woring on '%s'\n", argv[i]);
         initSymbolTable(&symbTable);
         initParsedRowList(&rowsList);
         initDataTable(&dataTable);
@@ -65,8 +33,7 @@ int main(int argc, char *argv[]) {
             dumpEntryExternData(&symbTable, argv[i]);
         }
         freeData(&symbTable, &dataTable, &codeTable, &rowsList);
-        /* printSymbolTable(&symbTable); */
-        /* printCodeTable(&codeTable); */
+        printf(BOLD_GREEN_PRINT "Successfully compiled '%s'\n", argv[i]);
     }
     return errorFlag;
 }

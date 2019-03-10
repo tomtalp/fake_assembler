@@ -16,5 +16,5 @@ void addDataToCodeTable(dataDefinitionsTable *dataTable, codeInstructionsTable *
 int relocateSymbolAddresses(symbolTable *symbTable, codeInstructionsTable *codeTable);
 int setEntrySymbols(parsedRowList *prList, symbolTable *symbTable);
 int secondIteration(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *prList);
-
+int run(char *fileName, symbolTable *symbTable, dataDefinitionsTable *dataTable, codeInstructionsTable *codeTable, parsedRowList *rowsList);
 #endif

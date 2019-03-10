@@ -5,16 +5,19 @@
 #include "utils.h"
 #include "parser.h"
 
-char *LEGAL_REGISTERS[REGISTERS_COUNT] = {
+/* All the valid registers in our program */
+static char *LEGAL_REGISTERS[REGISTERS_COUNT] = {
     "@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7"
 };
 
-dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
+/* The types of valid data definitions */
+static dataTypeInfo LEGAL_DATA_DECLARATIONS[] = {
     {".data", DATA_TYPE},
     {".string", STRING_TYPE}
 };
 
-opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
+/* Op codes names and their numeric flag */
+static opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
     {"mov", MOV},
     {"cmp", CMP},
     {"add", ADD},
