@@ -230,16 +230,68 @@ typedef struct parsedRowList {
     int parsedRowsCounter;
 } parsedRowList;
 
+
+/*
+    Initialize the symbol table by creating the head of the list, setting counter to 0
+    and initializing the reloc table that we have inside the symbol table
+
+    @param symbolTable *symbTable - Our symbol table
+*/
 void initSymbolTable(symbolTable *symbTable);
-void printSymbolTable(symbolTable *tb);
+
+/*
+    Add a new node to our symbol table.
+    If the record already exists in our symbol table, return -1.
+
+    @param symbolTable *tb - A pointer to the symbol table we're working with
+    @param char *symbolName - The name of the symbol
+    @param int memAddress - The memory address for the given symbol
+    @param enum SYMBOL_TYPES symbolType - A flag indicating what kind of symbol we're adding
+*/
 int addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType);
-void initDataTable(dataDefinitionsTable *dataTable);
+
+/*
+    Add a new node to our data table
+
+    @param dataDefinitionsTable *tb - A pointer to the data table we're working with
+    @param int num - The numeric value we want to encode as binary and add to the data table
+*/
 void addNodeToDataTable(dataDefinitionsTable *tb, int num);
-void printDataTable(dataDefinitionsTable *dataTable);
-void printCodeTable(codeInstructionsTable *codeTable);
-void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);
+
+/*
+    Initialize the data table
+
+    @param dataDefinitionsTable *dataTable - Pointer to the data table
+*/
+void initDataTable(dataDefinitionsTable *dataTable);
+
+/*
+    Add a new value to the relocations table
+
+    @param relocationTable *relocTable - Pointer to the relocations table
+    @param char *varName - The name of the symbol that we'll later relocate
+    @param int memAddress - The memory address that needs to be relocated
+*/
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress);
-void printRelocTable(relocationTable *relocTable);
+
+/*
+    Update symbol table memory addresses, based on the calculated instructionCount (so that
+    data declarations reside adter the code instructions, in our final data structure)
+
+    @param symbolTable *tb - Pointer to the symbol table
+    @param int baseMemAddress - The base memory address in our code, so we can get the mem address to the right place
+    @param int instrutionCount - The instruction count that was calculated after initially building the code table
+
+*/
+void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount);
+
+/*
+    Return a symbolTableNode pointer from a given symbol name.
+    If symbol name isn't found, return null!
+
+    @param symbolTable *tb - The symbol table we're working with
+    @param char *symbolName - The name of the symbol that needs to be located
+*/
 symbolTableNode *fetchFromSymbTableByName(symbolTable *tb, char *symbolName);
 
 #endif

@@ -4,12 +4,6 @@
 #include "dataStructures.h"
 #include "utils.h"
 
-/*
-    Initialize the symbol table by creating the head of the list, setting counter to 0
-    and initializing the reloc table that we have inside the symbol table
-
-    @param symbolTable *symbTable - Our symbol table
-*/
 void initSymbolTable(symbolTable *symbTable) {
     symbTable->head = NULL;
     symbTable->symbolsCounter = 0;
@@ -19,28 +13,6 @@ void initSymbolTable(symbolTable *symbTable) {
     symbTable->relocTable->head = NULL;
 }
 
-void printSymbolTable(symbolTable *tb) {
-    int i;
-    symbolTableNode *temp = tb->head;
-
-    printf("Symbol Table has %d rows\n", tb->symbolsCounter);
-
-    for(i = 0; i < tb->symbolsCounter; temp = temp->next, i++)  {   
-        printf("Symbol table row #%d = name = %s, addr = %d", i+1, temp->symbolName, temp->memoryAddress);
-
-        printf("\n");
-    }
-}
-
-/*
-    Add a new node to our symbol table.
-    If the record already exists in our symbol table, return -1.
-
-    @param symbolTable *tb - A pointer to the symbol table we're working with
-    @param char *symbolName - The name of the symbol
-    @param int memAddress - The memory address for the given symbol
-    @param enum SYMBOL_TYPES symbolType - A flag indicating what kind of symbol we're adding
-*/
 int addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum SYMBOL_TYPES symbolType) {
     symbolTableNode *newNode = (symbolTableNode*)malloc(sizeof(symbolTableNode));
     symbolTableNode *temp = (symbolTableNode*)malloc(sizeof(symbolTableNode));
@@ -72,12 +44,6 @@ int addNodeToSymbolTable(symbolTable *tb, char *symbolName, int memAddress, enum
     return 0;  
 }
 
-/*
-    Add a new node to our data table
-
-    @param dataDefinitionsTable *tb - A pointer to the data table we're working with
-    @param int num - The numeric value we want to encode as binary and add to the data table
-*/
 void addNodeToDataTable(dataDefinitionsTable *tb, int num) {
     dataDefinitionNode *newNode = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
     dataDefinitionNode *temp = (dataDefinitionNode*)malloc(sizeof(dataDefinitionNode));
@@ -102,24 +68,12 @@ void addNodeToDataTable(dataDefinitionsTable *tb, int num) {
     tb->dataCounter += 1;    
 }
 
-/*
-    Initialize the data table
-
-    @param dataDefinitionsTable *dataTable - Pointer to the data table
-*/
 void initDataTable(dataDefinitionsTable *dataTable) {
     dataTable->head = NULL;
     dataTable->dataCounter = 0;
 }
 
 
-/*
-    Add a new value to the relocations table
-
-    @param relocationTable *relocTable - Pointer to the relocations table
-    @param char *varName - The name of the symbol that we'll later relocate
-    @param int memAddress - The memory address that needs to be relocated
-*/
 void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAddress) {
     relocationTableNode *newNode = (relocationTableNode*)malloc(sizeof(relocationTableNode));
     relocationTableNode *temp = (relocationTableNode*)malloc(sizeof(relocationTableNode));
@@ -144,43 +98,6 @@ void addToRelocationsTable(relocationTable *relocTable, char *varName, int memAd
     relocTable->relocationVariablesCounter += 1;
 }
 
-void printRelocTable(relocationTable *relocTable) {
-    int i;
-    relocationTableNode *temp = relocTable->head;
-
-    printf("reloc Table has %d rows\n", relocTable->relocationVariablesCounter);
-    for(i = 0; i < relocTable->relocationVariablesCounter ; temp = temp->next, i++)  {   
-        printf("reloc table row #%d = name = %s, addr = %d\n", i+1, temp->symbolName, temp->memAddress);
-    }
-}
-
-void printDataTable(dataDefinitionsTable *dataTable) {
-    dataDefinitionNode *temp = dataTable->head;
-
-    while (temp != NULL) {
-        printf("Data table - '%s'\n", temp->binaryData);
-        temp = temp->next;
-    }
-}
-
-void printCodeTable(codeInstructionsTable *codeTable) {
-    int i;
-
-    printf("Code Table has %d rows\n", codeTable->instructionCount);
-    for (i = 0; i < codeTable->instructionCount; i++) {
-        printf("Code table row #%d mem addr = %s\n", i+BASE_MEM_ADDRESS, codeTable->rows[i]);
-    }
-}
-
-/*
-    Update symbol table memory addresses, based on the calculated instructionCount (so that
-    data declarations reside adter the code instructions, in our final data structure)
-
-    @param symbolTable *tb - Pointer to the symbol table
-    @param int baseMemAddress - The base memory address in our code, so we can get the mem address to the right place
-    @param int instrutionCount - The instruction count that was calculated after initially building the code table
-
-*/
 void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instructionCount) {
     int i;
     symbolTableNode *temp = tb->head;
@@ -194,13 +111,6 @@ void updateSymbolTableAddresses(symbolTable *tb, int baseMemAddress, int instruc
     }
 }
 
-/*
-    Return a symbolTableNode pointer from a given symbol name.
-    If symbol name isn't found, return null!
-
-    @param symbolTable *tb - The symbol table we're working with
-    @param char *symbolName - The name of the symbol that needs to be located
-*/
 symbolTableNode *fetchFromSymbTableByName(symbolTable *tb, char *symbolName) {
     symbolTableNode *temp = tb->head;
 
