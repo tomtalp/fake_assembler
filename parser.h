@@ -16,8 +16,6 @@ void getCodeOperands(char *inputRow, parsedRow *pr);
 void parseRow(char *inputRow, parsedRow *pr, int rowNum);
 void initParsedRowList(parsedRowList *prList);
 void addParsedRowToList(parsedRowList *prList, parsedRow *pr);
-void printParsedRowsList(parsedRowList *prList);
-void printParserError(parsedRow *pr);
 void validateIntDataDeclaration(parsedRow *pr, char *rawData);
 void validateStringDataDeclaration(parsedRow *pr, char *rawData);
 void validateSymbolName(parsedRow *pr);

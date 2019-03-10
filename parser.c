@@ -33,41 +33,13 @@ opCode LEGAL_OP_CODES[OP_CODES_COUNT] = {
     {"stop", STOP}
 };
 
-void printParsedRow(parsedRow *pr) {
-    if (pr->hasSymbol) {
-        printf("Row has a symbol, called '%s' \n", pr->symbolName);
-    }
-    printf("Parsed row type = %d\n", pr->rowType);
-    // pr->rowMetadata->dataRowMetadata->type;
-    if (pr->rowType == DATA_DECLARATION) {
-        printf("Parsed row is of type 'data def' ");
-        if (pr->rowMetadata.dataRowMetadata.type == DATA_TYPE) {
-            printf("with DATA type");
-        } else if (pr->rowMetadata.dataRowMetadata.type == STRING_TYPE) {
-            printf("with STRING type");
-        }
+/*
+    Check if an input row has a symbol definition (symbol = label) by looking for a ':'
+    This doesn't mean it's a valid label name, we're validating that later
 
-        printf("Raw data = '%s'\n", pr->rowMetadata.dataRowMetadata.rawData);
-
-    } else if (pr->rowType == CODE_INSTRUCTION) {
-        printf("Parsed row is of type 'code instruction', instruction type %s with num %d \n", pr->rowMetadata.codeRowMetadata.oc.opCodeName, pr->rowMetadata.codeRowMetadata.oc.opCodeNum);
-        if (pr->rowMetadata.codeRowMetadata.srcOperandType == NO_OPERAND) {
-            printf("No source operand ");
-        } else {
-            printf("Source operand = '%s' (type %d) ", pr->rowMetadata.codeRowMetadata.srcOperand, pr->rowMetadata.codeRowMetadata.srcOperandType);
-        }
-        printf(" | ");
-        if (pr->rowMetadata.codeRowMetadata.destOperandType == NO_OPERAND) {
-            printf("No dest operand ");
-        } else {
-            printf("Destination operand = '%s' (type %d) ", pr->rowMetadata.codeRowMetadata.destOperand, pr->rowMetadata.codeRowMetadata.destOperandType);
-        }
-    }
-
-    printf("\n");
-}
-
-
+    @param char *inputRow - The raw row from the file
+    @return int - A flag representing if we found a symbol or not. 0 = False, 1 = True
+*/
 int isSymbolDefinition(char *inputRow) {
     if (strchr(inputRow, ':') == NULL) {
         return 0;
@@ -75,6 +47,12 @@ int isSymbolDefinition(char *inputRow) {
     return 1;
 } 
 
+/*
+    Extract the symbol name from the input row
+
+    @param char *inputRow - The raw row from the file
+    @param char *symbolName - The destination string for extract the symbol name into
+*/
 void getSymbolName(char *inputRow, char *symbolName) {
     char *inputRowStart = inputRow;
 
@@ -96,6 +74,12 @@ void getSymbolName(char *inputRow, char *symbolName) {
     *inputRow = '\0';
 }
 
+/*
+    Validated that the extracted symbol name is legal - no invalid characters, no spaces, starts with
+    an alphabetic character
+
+    @param parsedRow *pr - The parsedRow object ptr which has the symbol name
+*/
 void validateSymbolName(parsedRow *pr) {
     char *temp = pr->symbolName;
     if (!isalpha(*(pr->symbolName))) {
@@ -112,6 +96,12 @@ void validateSymbolName(parsedRow *pr) {
     }
 }
 
+/*
+    Get the data def type - .string or .data
+
+    @param char *dataDef - The raw data definition from the file
+    @return int - The numeric value we've assigned for the data def
+*/
 int getDataDefType(char *dataDef) {
     if (strcmp(dataDef, ".string") == 0) {
         return STRING_TYPE;
@@ -119,6 +109,13 @@ int getDataDefType(char *dataDef) {
     return DATA_TYPE;
 }
 
+/*
+    Receive an input row that was read from the file, and determine the row type - data declaration,
+    code instruction, extern/entry
+
+    @param char *inputRow - The raw string from the file
+    @param parsedRow *pr - The parsedRow object pointer
+*/
 void getRowType(char *inputRow, parsedRow *pr) {
     int i = 0;
     char firstKeyword[MAX_RESERVED_KEYWORD_SIZE];
@@ -126,10 +123,6 @@ void getRowType(char *inputRow, parsedRow *pr) {
     int detectedRowType = 0;
 
     while (*inputRowStart != 0 && !isspace(*inputRowStart)) {
-        if (i >= MAX_RESERVED_KEYWORD_SIZE) {
-            printf("Whoopsie, first keyword is longer than the max reserved keyword. HANDLE THISSSS\n");
-            return;
-        }
         firstKeyword[i++] = *inputRowStart;
         inputRowStart++;
     }
@@ -142,10 +135,6 @@ void getRowType(char *inputRow, parsedRow *pr) {
         inputRowStart++; 
     }
     *inputRow = '\0';
-
-    printf("Initial detected keyword = '%s'\n", firstKeyword);
-
-    /* Detect the row type - data decaration, code instruction, extern or entry */
 
     if (firstKeyword[0] == '.') { /* Expecting a data declaration, or extern/entry */ 
         for (i = 0; i < DATA_DECLARATION_TYPES_COUNT; i++) {
@@ -161,15 +150,13 @@ void getRowType(char *inputRow, parsedRow *pr) {
             if (strcmp(firstKeyword, ".extern") == 0) {
                 pr->rowType = EXTERNAL_DECLARATION;
                 detectedRowType = 1;
-                printf("Detected EXTERNAL DECLARATION\n");
             } else if (strcmp(firstKeyword, ".entry") == 0) {
                 pr->rowType = ENTRY_DECLARATION;
                 detectedRowType = 1;
-                printf("Detected ENTRY DECLARATION\n");
             } else {
                 strcpy(pr->rowMetadata.dataRowMetadata.rawData, firstKeyword); /* Stick the faulty data definition in the raw data so we can print it later*/
-            pr->errorType = INVALID_DATA_DEF_TYPE;
-            return;
+                pr->errorType = INVALID_DATA_DEF_TYPE;
+                return;
             }
         }
     }
@@ -196,6 +183,12 @@ void getRowType(char *inputRow, parsedRow *pr) {
     }
 }
 
+/*
+    Check if an operand is a valid register
+
+    @param char *operand - string representing a registr
+    @ return int - 0 for false, 1 for true
+*/
 int operandIsRegister(char *operand) {
     int i;
 
@@ -208,6 +201,12 @@ int operandIsRegister(char *operand) {
     return 0;
 }
 
+/*
+    Check if an operand is a valid number, which might also contain a +/- sign
+
+    @param char *operand - string representing a number
+    @ return int - 0 for false, 1 for true
+*/
 int operandIsNumber(char *operand) {
     int hasSign;
 
@@ -215,9 +214,8 @@ int operandIsNumber(char *operand) {
         hasSign = 1;
         operand++;
     }
-    printf("Checking '%s'\n", operand);
+
     while (*operand != '\0') {
-        // if (hasSign && (*operand == '+' || *operand == '-'))
         if (!isdigit(*operand)) {
             return 0;
         }
@@ -672,15 +670,4 @@ void addParsedRowToList(parsedRowList *prList, parsedRow *pr) {
 
     temp->next = newNode;
     prList->parsedRowsCounter += 1;
-}
-
-void printParsedRowsList(parsedRowList *prList) {
-    int i;
-    parsedRowNode *temp = (parsedRowNode*)malloc(sizeof(parsedRowNode)); /* TODO - Do I need this? or can I just do parsedRowNode *temp = prList->head */
-    temp = prList->head;
-
-    printf("Parsed Rows list has has %d rows\n", prList->parsedRowsCounter);
-    for (i = 0; i < prList->parsedRowsCounter; temp = temp->next, i++) {
-        printf("Row #%d is of type %d\n", temp->pr.originalLineNum, temp->pr.rowType);
-    }
 }
